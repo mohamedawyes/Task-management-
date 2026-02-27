@@ -1,0 +1,2567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>EL La3eba Team · Premium Task Manager</title>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Font: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ===== FULLY RESPONSIVE STYLES ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #6366f1;
+      --sidebar-bg: linear-gradient(180deg, #6366f1, #4338ca);
+      --border: #e9eef2;
+      --solved-bg: #e6f7e6;
+      --badge-bg: #ef4444;
+      --badge-text: white;
+      --header-height: 70px;
+      --sidebar-width: 260px;
+      --task-panel-width: 360px;
+    }
+    body.dark {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #818cf8;
+      --sidebar-bg: linear-gradient(180deg, #1e293b, #0f172a);
+      --border: #334155;
+      --solved-bg: #1a3b1a;
+      --badge-bg: #b91c1c;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
+    }
+
+    .login-container {
+      background: var(--card);
+      border-radius: 32px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      padding: 2rem;
+      width: 100%;
+      max-width: 400px;
+      animation: fadeInUp 0.5s ease;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .login-container h2 {
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.5rem;
+      color: var(--text);
+    }
+    .login-container h2 i { color: var(--accent); }
+    .login-container input {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      margin-bottom: 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-size: 1rem;
+      background: var(--card);
+      color: var(--text);
+    }
+    .login-container button {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.9rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .login-container button:hover { background: #4f52e6; }
+    .error-msg { color: #b91c1c; margin-top: 0.5rem; font-size: 0.9rem; }
+
+    .app-container {
+      max-width: 1400px;
+      width: 100%;
+      background: var(--card);
+      border-radius: 32px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 98vh;
+      animation: fadeInUp 0.6s ease-out;
+      display: none;
+    }
+
+    .app-header {
+      padding: 1rem 1.5rem;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-height: var(--header-height);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1.3rem;
+      color: var(--text);
+    }
+    .logo i { color: var(--accent); font-size: 1.8rem; }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .role-badge {
+      background: #e2e8f0;
+      padding: 0.3rem 1rem;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    body.dark .role-badge { background: #334155; color: #f1f5f9; }
+    .logout-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 0.5rem 1.2rem;
+      cursor: pointer;
+      color: var(--text);
+      transition: 0.2s;
+    }
+    .logout-btn:hover { background: var(--border); }
+    .header-actions {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+    .header-actions button {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 0.5rem 1rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 44px;
+    }
+    .header-actions button:hover { background: var(--border); }
+    .export-btn { background: #10b981 !important; border-color: #10b981 !important; color: white !important; }
+    .import-btn { background: #8b5cf6 !important; border-color: #8b5cf6 !important; color: white !important; }
+    .sync-folder-btn { background: var(--accent) !important; border-color: var(--accent) !important; color: white !important; }
+    .sync-now-btn { background: #8b5cf6 !important; border-color: #8b5cf6 !important; color: white !important; }
+    .backup-btn { background: #f59e0b !important; border-color: #f59e0b !important; color: white !important; }
+    .restore-btn { background: #ef4444 !important; border-color: #ef4444 !important; color: white !important; }
+
+    /* HAMBURGER MENU FOR SMALL SCREENS */
+    .menu-toggle {
+      display: none;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 0.5rem 1rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+    @media screen and (max-width: 768px) {
+      .menu-toggle {
+        display: inline-block;
+      }
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 80%;
+        max-width: 300px;
+        height: 100vh;
+        z-index: 1400;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+        border-radius: 0 20px 20px 0;
+      }
+      .sidebar.open {
+        left: 0;
+      }
+      .app-header {
+        padding-left: 1rem;
+      }
+      .logo {
+        flex: 1;
+        justify-content: center;
+      }
+      .main-layout {
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .content-flex {
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .task-panel { 
+        width: 100%; 
+        border-right: none; 
+        border-bottom: 1px solid var(--border); 
+        max-height: 50vh; 
+      }
+      .detail-panel {
+        width: 100%;
+        max-height: none;
+        overflow-y: auto;
+        padding: 1rem;
+      }
+      .detail-panel pre, .detail-panel p, .detail-panel div {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+      }
+      .app-header { flex-direction: row; align-items: center; }
+      .user-info { justify-content: flex-end; }
+      .header-actions { justify-content: center; flex-wrap: wrap; }
+      .grid { grid-template-columns: 1fr 1fr; }
+      .permission-item { width: 100%; }
+      .task-card { padding: 0.8rem; }
+      .task-title { font-size: 0.9rem; }
+      .task-meta { font-size: 0.75rem; }
+    }
+    @media screen and (max-width: 480px) {
+      .grid { grid-template-columns: 1fr; }
+      .header-actions button { font-size: 0.8rem; padding: 0.4rem 0.6rem; }
+      .task-card { padding: 0.6rem; }
+    }
+
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      flex-direction: row;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      color: white;
+      padding: 1.5rem 1rem;
+      overflow-y: auto;
+      transition: width 0.3s;
+    }
+    .sidebar h2 {
+      font-size: 18px;
+      margin-bottom: 40px;
+      padding-left: 0.5rem;
+    }
+    .sidebar .menu-item {
+      padding: 12px 15px;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .sidebar .menu-item:hover { background: rgba(255,255,255,0.15); }
+    .sidebar .menu-item.active {
+      background: rgba(255,255,255,0.25);
+      font-weight: 600;
+    }
+    .badge {
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 20px;
+      margin-left: auto;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .content-flex {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    .task-panel {
+      width: var(--task-panel-width);
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .panel-header {
+      padding: 1.2rem 1.2rem 0.3rem 1.2rem;
+    }
+    .panel-header h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.8rem;
+    }
+    .filter-tab {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 0.4rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: 0.15s;
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .filter-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* Search and filter row */
+    .task-filters {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .task-filters input, .task-filters select {
+      flex: 1 1 150px;
+      min-width: 120px;
+      padding: 0.5rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      font-size: 0.9rem;
+      background: var(--card);
+      color: var(--text);
+    }
+    .task-filters input::placeholder {
+      color: var(--muted);
+    }
+    /* Hide user filter for engineer */
+    .task-filters select.engineer-hidden {
+      display: none;
+    }
+
+    .new-task-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: 40px;
+      padding: 0.7rem 1rem;
+      font-weight: 600;
+      color: white;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: 0.2s;
+      margin-bottom: 1rem;
+      min-height: 48px;
+      font-size: 1rem;
+    }
+    .task-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 1.2rem 1.2rem;
+    }
+    .task-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+    .task-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+    .task-card.selected { border-left: 5px solid var(--accent); }
+    .task-card.priority-high { background: #fff0f0; }
+    body.dark .task-card.priority-high { background: #2d1a1a; }
+    .task-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: 1rem;
+    }
+    .task-badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 50px;
+      background: #e9ecf0;
+      color: #2c3e50;
+    }
+    .status-todo { background: #f1f5f9; color: #475569; }
+    .status-in-progress { background: #dbeafe; color: #1e40af; }
+    .status-done { background: #dcfce7; color: #166534; }
+    .task-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 0.5rem 0;
+    }
+    .progress-bar-bg {
+      background: #e4eaf1;
+      height: 6px;
+      border-radius: 10px;
+      margin: 0.5rem 0;
+    }
+    .progress-bar-fill {
+      height: 6px;
+      border-radius: 10px;
+      background: #3b82f6;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .task-dates {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .detail-panel {
+      flex: 1;
+      background: var(--card);
+      padding: 1.5rem;
+      overflow-y: auto;
+      animation: fadeIn 0.4s;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .detail-panel pre, .detail-panel p, .detail-panel div {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0.2; } to { opacity: 1; }
+    }
+    .empty-state {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      text-align: center;
+      padding: 1rem;
+    }
+    .empty-state i { font-size: 4rem; margin-bottom: 1rem; opacity: 0.3; }
+
+    .full-width-content {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: none;
+    }
+
+    /* Back button for mobile detail view */
+    .back-to-list {
+      display: none;
+      margin-bottom: 1rem;
+    }
+    @media screen and (max-width: 768px) {
+      .back-to-list {
+        display: inline-block;
+      }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: var(--card);
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      transition: 0.3s;
+      border: 1px solid var(--border);
+    }
+    .card:hover { transform: translateY(-5px); }
+    .card h4 {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .card .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .section {
+      background: var(--card);
+      padding: 30px;
+      border-radius: 20px;
+      margin-bottom: 40px;
+      border: 1px solid var(--border);
+    }
+    .chart-container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      height: auto;
+    }
+
+    .gantt-bar {
+      height: 24px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .gantt-label {
+      font-size: 13px;
+      margin-bottom: 5px;
+      color: var(--muted);
+    }
+
+    .user-table, .logs-table, .roles-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow-x: auto;
+      display: block;
+    }
+    .user-table th, .user-table td,
+    .logs-table th, .logs-table td,
+    .roles-table th, .roles-table td {
+      text-align: left;
+      padding: 0.8rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .issue-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      transition: 0.2s;
+    }
+    .issue-card.solved {
+      background: var(--solved-bg);
+      border-left: 5px solid #10b981;
+    }
+    .issue-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .issue-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .issue-description { margin-bottom: 0.5rem; word-wrap: break-word; }
+    .issue-mentions { font-size: 0.85rem; color: var(--accent); }
+    .issue-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .solve-btn, .edit-issue-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 0.2rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .solve-btn:hover, .edit-issue-btn:hover { background: var(--border); }
+
+    /* Hierarchical Org Chart with Departments */
+    .org-departments {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+    .org-department {
+      flex: 1 1 300px;
+      min-width: 280px;
+      background: var(--card);
+      border-radius: 24px;
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+    .org-department h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 10px;
+    }
+    .org-tree {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .org-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px 0;
+      position: relative;
+      width: 100%;
+    }
+    .org-card {
+      background: var(--card);
+      border: 2px solid var(--accent);
+      border-radius: 20px;
+      padding: 15px 25px;
+      min-width: 180px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: 0.2s;
+      z-index: 2;
+    }
+    .org-card:hover { transform: scale(1.05); }
+    .org-card.manager { border-color: #f59e0b; }
+    .org-card.engineer { border-color: #10b981; }
+    .org-card .role {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .org-card .name {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    .org-children {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 20px;
+      position: relative;
+    }
+    .org-children::before {
+      content: '';
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      width: 2px;
+      height: 20px;
+      background: var(--accent);
+      transform: translateX(-50%);
+    }
+    .org-node:not(:only-child) > .org-card::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      width: 2px;
+      height: 20px;
+      background: var(--accent);
+      transform: translateX(-50%);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 1rem;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: var(--card);
+      border-radius: 32px;
+      width: 500px;
+      max-width: 100%;
+      padding: 1.8rem;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .form-group { margin-bottom: 1.5rem; }
+    label {
+      font-weight: 500;
+      font-size: 0.9rem;
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      background: var(--card);
+      color: var(--text);
+    }
+    .progress-slider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .progress-slider input { flex: 1; min-width: 200px; }
+    .date-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-secondary {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem 1.2rem;
+      border-radius: 40px;
+      cursor: pointer;
+    }
+
+    .permissions-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+    .permission-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: calc(50% - 0.5rem);
+    }
+    .permission-item input[type="checkbox"] { width: auto; }
+  </style>
+</head>
+<body>
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="login-container">
+    <h2><i class="fas fa-smile-wink"></i> Smile you working at EL La3eba Team 😊</h2>
+    <input type="text" id="loginUsername" placeholder="Username">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button id="loginBtn">Log in</button>
+    <div id="loginError" class="error-msg"></div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="appContainer" class="app-container" style="display: none;">
+    <header class="app-header">
+      <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+      <div class="logo"><i class="fas fa-futbol"></i> EL La3eba Team</div>
+      <div class="user-info">
+        <span id="currentUserDisplay"></span>
+        <span class="role-badge" id="currentRoleDisplay"></span>
+        <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+      <div class="header-actions">
+        <button class="import-btn" id="importBtn" style="display: none;"><i class="fas fa-file-import"></i> Import</button>
+        <button class="sync-folder-btn" id="syncFolderBtn" style="display: none;"><i class="fas fa-folder-open"></i> Set Sync</button>
+        <button class="sync-now-btn" id="syncNowBtn" style="display: none;"><i class="fas fa-sync"></i> Sync</button>
+        <button class="backup-btn" id="backupBtn" style="display: none;"><i class="fas fa-download"></i> Backup</button>
+        <button class="restore-btn" id="restoreBtn" style="display: none;"><i class="fas fa-upload"></i> Restore</button>
+        <button class="export-btn" id="exportBtn"><i class="fas fa-file-excel"></i> Export</button>
+        <button class="theme-toggle" id="themeToggle" style="background:none; border:1px solid var(--border);"><i class="fas fa-moon"></i> Theme</button>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <div class="sidebar" id="sidebar"></div>
+      <div class="content-flex" id="dynamicContent">
+        <!-- TASK PANEL -->
+        <div class="task-panel" id="taskPanel" style="display: none;">
+          <div class="panel-header">
+            <h2><i class="fas fa-tasks" style="color:var(--accent);"></i> Tasks</h2>
+            <div class="filter-tabs" id="filterTabs">
+              <span class="filter-tab active" data-filter="all">All</span>
+              <span class="filter-tab" data-filter="todo">To Do</span>
+              <span class="filter-tab" data-filter="in-progress">In Progress</span>
+              <span class="filter-tab" data-filter="done">Done</span>
+            </div>
+            <!-- Search and user filter -->
+            <div class="task-filters">
+              <input type="text" id="searchTask" placeholder="🔍 Search by title...">
+              <select id="filterUser">
+                <option value="">All Users</option>
+                <!-- populated dynamically -->
+              </select>
+            </div>
+            <button class="new-task-btn" id="newTaskBtn"><i class="fas fa-plus"></i> New Task</button>
+          </div>
+          <div class="task-list" id="taskListContainer"></div>
+        </div>
+        <!-- DETAIL PANEL -->
+        <div class="detail-panel" id="detailPanel" style="display: none;">
+          <button class="btn-secondary back-to-list" id="backToListBtn"><i class="fas fa-arrow-left"></i> Back to list</button>
+          <div class="empty-state" id="emptyState">
+            <i class="fas fa-clipboard-list"></i>
+            <h3>No task selected</h3>
+            <p>Choose a task from the list or create a new one</p>
+          </div>
+          <div id="taskDetailView" style="display: none;"></div>
+        </div>
+        <!-- FULL-WIDTH CONTENT -->
+        <div class="full-width-content" id="fullWidthContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOLD MODAL -->
+  <div id="holdModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header"><h3>Hold Task</h3><button class="close-modal" id="closeHoldModal">&times;</button></div>
+      <div id="holdTaskId" style="display:none;"></div>
+      <div class="form-group">
+        <label>Hold type</label>
+        <select id="holdType"><option value="user">Reassign to another user (hold)</option><option value="general">General hold</option></select>
+      </div>
+      <div id="holdUserSelectGroup" class="form-group">
+        <label>Select user</label>
+        <select id="holdForUser"></select>
+      </div>
+      <div class="form-group"><label>Reason</label><textarea id="holdReason" rows="3"></textarea></div>
+      <button class="btn" id="submitHoldBtn">Submit</button>
+    </div>
+  </div>
+
+  <!-- ISSUE MODAL (for creation) -->
+  <div id="issueModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header"><h3 id="issueModalTitle">Create Issue</h3><button class="close-modal" id="closeIssueModal">&times;</button></div>
+      <input type="hidden" id="issueEditId" value="">
+      <div class="form-group"><label>Title</label><input type="text" id="issueTitle"></div>
+      <div class="form-group"><label>Description</label><textarea id="issueDesc" rows="4"></textarea></div>
+      <div class="form-group"><label>Mention users</label><select id="issueMentions" multiple size="4"></select><small>Ctrl+click to select multiple</small></div>
+      <button class="btn" id="createIssueBtn">Save</button>
+    </div>
+  </div>
+
+  <!-- PROFILE MODAL -->
+  <div id="profileModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header"><h3>Edit Profile</h3><button class="close-modal" id="closeProfileModal">&times;</button></div>
+      <div class="form-group"><label>Current Password</label><input type="password" id="profileCurrentPassword"></div>
+      <div class="form-group"><label>New Username</label><input type="text" id="profileNewUsername"></div>
+      <div class="form-group"><label>New Email</label><input type="email" id="profileNewEmail"></div>
+      <div class="form-group"><label>New Password</label><input type="password" id="profileNewPassword"></div>
+      <div class="form-group"><label>Confirm Password</label><input type="password" id="profileConfirmPassword"></div>
+      <button class="btn" id="saveProfileBtn">Save</button>
+    </div>
+  </div>
+
+  <!-- USER INFO MODAL -->
+  <div id="userInfoModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header"><h3>User Info</h3><button class="close-modal" id="closeUserInfoModal">&times;</button></div>
+      <div id="userInfoContent"></div>
+    </div>
+  </div>
+
+  <!-- ROLE MODAL -->
+  <div id="roleModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header"><h3 id="roleModalTitle">Edit Role</h3><button class="close-modal" id="closeRoleModal">&times;</button></div>
+      <div class="form-group"><label>Role Name</label><input type="text" id="roleName"></div>
+      <div class="form-group"><label>Permissions</label><div class="permissions-group" id="permissionsContainer"></div></div>
+      <button class="btn" id="saveRoleBtn">Save</button>
+    </div>
+  </div>
+
+  <!-- IMPORT FILE INPUT (hidden) -->
+  <input type="file" id="importFileInput" accept=".csv, text/csv" style="display: none;">
+
+  <!-- RESTORE FILE INPUT -->
+  <input type="file" id="restoreFileInput" accept=".json,application/json" style="display: none;">
+
+  <script>
+    (function() {
+      // ---------- APP VERSION ----------
+      const APP_VERSION = '7.9.0';
+      const STORAGE_KEY = 'flowtask_pro';
+      const FIRST_RUN_KEY = 'flowtask_first_run';
+      const hasFileSystemAccess = 'showDirectoryPicker' in window;
+
+      // ---------- DEFAULTS ----------
+      const allPermissions = [
+        { id: 'view_tasks', label: 'View Tasks' },
+        { id: 'create_task', label: 'Create Task' },
+        { id: 'edit_task', label: 'Edit Any Task' },
+        { id: 'delete_task', label: 'Delete Any Task' },
+        { id: 'assign_task', label: 'Assign Tasks' },
+        { id: 'hold_task', label: 'Hold/Reassign Tasks' },
+        { id: 'comment', label: 'Add Comments' },
+        { id: 'view_issues', label: 'View Issues' },
+        { id: 'create_issue', label: 'Create Issue' },
+        { id: 'solve_issue', label: 'Mark Issue Solved' },
+        { id: 'edit_issue', label: 'Edit Any Issue' },
+        { id: 'view_hold', label: 'View Hold Tasks' },
+        { id: 'view_performance', label: 'View Team Performance' },
+        { id: 'view_gantt', label: 'View Timeline (Gantt)' },
+        { id: 'export_all', label: 'Export All Tasks' },
+        { id: 'export_own', label: 'Export Own Tasks' },
+        { id: 'import_tasks', label: 'Import Tasks from CSV' },
+        { id: 'view_logs', label: 'View Audit Logs' },
+        { id: 'manage_users', label: 'Manage Users' },
+        { id: 'manage_roles', label: 'Manage Roles' },
+        { id: 'system_update', label: 'System Update' }
+      ];
+
+      const defaultRoles = [
+        { id: 'r1', name: 'admin', permissions: allPermissions.map(p => p.id) },
+        { id: 'r2', name: 'manager', permissions: ['view_tasks', 'create_task', 'edit_task', 'delete_task', 'assign_task', 'hold_task', 'comment', 'view_issues', 'create_issue', 'solve_issue', 'edit_issue', 'view_hold', 'view_performance', 'view_gantt', 'export_all', 'export_own'] }, // no import
+        { id: 'r3', name: 'engineer', permissions: ['view_tasks', 'create_task', 'hold_task', 'comment', 'view_issues', 'create_issue', 'solve_issue', 'edit_issue', 'view_hold', 'export_own'] } // added create_task
+      ];
+
+      // Default users with managerId (reporting hierarchy)
+      const defaultUsers = [
+        { id: 'u1', username: 'admin', email: 'admin@example.com', password: 'Awes123456789@', roleId: 'r1', managerId: null }, // top
+        { id: 'u2', username: 'Manager', email: 'manager@example.com', password: 'manager', roleId: 'r2', managerId: 'u1' }, // reports to admin
+        { id: 'u3', username: 'Engineer', email: 'engineer@example.com', password: 'eng', roleId: 'r3', managerId: 'u2' } // reports to manager
+      ];
+
+      const defaultTasks = [
+        { id: 't1', title: 'Design homepage', description: 'Create wireframes', status: 'in-progress', progress: 60, assignedTo: 'u3', priority: 'high', startDate: '2025-03-01', deadline: '2025-03-15', holdReason: null, holdType: null, holdForUserId: null, holdComment: null, comments: [], createdAt: Date.now() - 3*86400000 },
+        { id: 't2', title: 'Setup CI/CD', description: 'Configure GitHub Actions', status: 'todo', progress: 0, assignedTo: 'u3', priority: 'medium', startDate: '2025-03-10', deadline: '2025-03-20', holdReason: null, holdType: null, holdForUserId: null, holdComment: null, comments: [], createdAt: Date.now() - 2*86400000 },
+        { id: 't3', title: 'Write documentation', description: 'Update README', status: 'done', progress: 100, assignedTo: 'u3', priority: 'low', startDate: '2025-02-20', deadline: '2025-03-01', holdReason: null, holdType: null, holdForUserId: null, holdComment: null, comments: [], createdAt: Date.now() - 86400000 }
+      ];
+
+      let users = [];
+      let tasks = [];
+      let issues = [];
+      let logs = [];
+      let roles = [];
+
+      // ---------- ENCRYPTION HELPERS (same as before) ----------
+      async function getKeyFromPassword(password) {
+        const enc = new TextEncoder();
+        const keyMaterial = await window.crypto.subtle.importKey('raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
+        return window.crypto.subtle.deriveKey(
+          { name: 'PBKDF2', salt: enc.encode('flowtask_salt'), iterations: 100000, hash: 'SHA-256' },
+          keyMaterial,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['encrypt', 'decrypt']
+        );
+      }
+
+      async function encryptText(text, password) {
+        const key = await getKeyFromPassword(password);
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const enc = new TextEncoder();
+        const encrypted = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
+        const combined = new Uint8Array(iv.length + new Uint8Array(encrypted).length);
+        combined.set(iv, 0);
+        combined.set(new Uint8Array(encrypted), iv.length);
+        return btoa(String.fromCharCode(...combined));
+      }
+
+      async function decryptText(encryptedBase64, password) {
+        try {
+          const combined = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+          const iv = combined.slice(0, 12);
+          const ciphertext = combined.slice(12);
+          const key = await getKeyFromPassword(password);
+          const decrypted = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+          return new TextDecoder().decode(decrypted);
+        } catch (e) {
+          console.error('Decryption failed:', e);
+          return null;
+        }
+      }
+
+      // ---------- INDEXEDDB FOR FOLDER HANDLE ----------
+      let db = null;
+      function openDB() {
+        if (!hasFileSystemAccess) return Promise.resolve(null);
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open('flowtask_db', 1);
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => { db = request.result; resolve(db); };
+          request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            db.createObjectStore('handles');
+          };
+        });
+      }
+
+      async function storeHandle(handle) {
+        if (!hasFileSystemAccess) return;
+        if (!db) await openDB();
+        const tx = db.transaction('handles', 'readwrite');
+        tx.objectStore('handles').put(handle, 'directoryHandle');
+        return tx.complete;
+      }
+
+      async function loadHandle() {
+        if (!hasFileSystemAccess) return null;
+        if (!db) await openDB();
+        const tx = db.transaction('handles', 'readonly');
+        return new Promise((resolve) => {
+          const request = tx.objectStore('handles').get('directoryHandle');
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => resolve(null);
+        });
+      }
+
+      // ---------- FILE SYSTEM ----------
+      let directoryHandle = null;
+      let fileHandle = null;
+      let lastModified = 0;
+      let watcherInterval = null;
+
+      async function verifyPermission(fileHandle, withWrite) {
+        const opts = {};
+        if (withWrite) opts.mode = 'readwrite';
+        if (await fileHandle.queryPermission(opts) === 'granted') return true;
+        return (await fileHandle.requestPermission(opts)) === 'granted';
+      }
+
+      async function pickDirectory() {
+        if (!hasFileSystemAccess) { alert('File system sync not supported on this device.'); return false; }
+        try {
+          directoryHandle = await window.showDirectoryPicker();
+          fileHandle = await directoryHandle.getFileHandle('tasks.enc', { create: true });
+          if (!await verifyPermission(fileHandle, true)) { alert('Write permission denied.'); return false; }
+          await storeHandle(directoryHandle);
+          await loadFromFile();
+          startFileWatcher();
+          addLog('SET_SYNC_FOLDER', 'Sync folder configured');
+          return true;
+        } catch (err) {
+          if (err.name !== 'AbortError') alert('Folder selection failed: ' + err.message);
+          return false;
+        }
+      }
+
+      async function loadFromFile() {
+        if (!fileHandle) return false;
+        try {
+          const file = await fileHandle.getFile();
+          lastModified = file.lastModified;
+          const encryptedText = await file.text();
+          if (encryptedText.trim() === '') return false;
+          const adminUser = users.find(u => u.roleId === 'r1') || defaultUsers[0];
+          const decrypted = await decryptText(encryptedText, adminUser.password);
+          if (!decrypted) { alert('Failed to decrypt file.'); return false; }
+          const parsed = parseCSV(decrypted);
+          if (parsed.users && parsed.tasks && parsed.issues && parsed.logs && parsed.roles) {
+            users = parsed.users;
+            tasks = parsed.tasks;
+            issues = parsed.issues;
+            logs = parsed.logs;
+            roles = parsed.roles;
+            tasks.forEach(t => { if (!t.createdAt) t.createdAt = Date.now(); });
+            issues.forEach(i => { if (!i.createdAt) i.createdAt = Date.now(); });
+            return true;
+          }
+          return false;
+        } catch (e) {
+          console.error('Error reading file:', e);
+          return false;
+        }
+      }
+
+      async function saveToFile() {
+        if (!fileHandle) return false;
+        try {
+          if (!await verifyPermission(fileHandle, true)) {
+            console.warn('Lost write permission to CSV file.');
+            return false;
+          }
+          const adminUser = users.find(u => u.roleId === 'r1');
+          if (!adminUser) { console.warn('No admin user, cannot encrypt.'); return false; }
+          const csvContent = tasksToCSV();
+          const encrypted = await encryptText(csvContent, adminUser.password);
+          const writable = await fileHandle.createWritable();
+          await writable.write(encrypted);
+          await writable.close();
+          const file = await fileHandle.getFile();
+          lastModified = file.lastModified;
+          return true;
+        } catch (e) {
+          console.error('Error writing to CSV:', e);
+          return false;
+        }
+      }
+
+      function tasksToCSV() {
+        const userLines = users.map(u => 
+          `U,${u.id},${escapeCSV(u.username)},${escapeCSV(u.email)},${escapeCSV(u.password)},${u.roleId},${u.managerId || ''}`
+        ).join('\n');
+        const taskLines = tasks.map(t => {
+          const commentsStr = JSON.stringify(t.comments || []);
+          return `T,${t.id},${escapeCSV(t.title)},${escapeCSV(t.description || '')},${t.status},${t.progress},${t.assignedTo || ''},${t.startDate || ''},${t.deadline || ''},${t.priority || 'medium'},${escapeCSV(t.holdReason || '')},${escapeCSV(t.holdType || '')},${t.holdForUserId || ''},${escapeCSV(t.holdComment || '')},${escapeCSV(commentsStr)},${t.createdAt || ''}`;
+        }).join('\n');
+        const issueLines = issues.map(i => {
+          const mentionsStr = JSON.stringify(i.mentions || []);
+          return `I,${i.id},${escapeCSV(i.title)},${escapeCSV(i.description)},${i.createdBy},${escapeCSV(mentionsStr)},${i.createdAt || ''},${i.solved ? '1' : '0'}`;
+        }).join('\n');
+        const logLines = logs.map(l =>
+          `L,${l.id},${l.userId},${escapeCSV(l.username)},${escapeCSV(l.action)},${escapeCSV(l.details)},${l.timestamp}`
+        ).join('\n');
+        const roleLines = roles.map(r =>
+          `R,${r.id},${escapeCSV(r.name)},${escapeCSV(JSON.stringify(r.permissions))}`
+        ).join('\n');
+        return [userLines, taskLines, issueLines, logLines, roleLines].filter(Boolean).join('\n');
+      }
+
+      function escapeCSV(str) {
+        if (str === null || str === undefined) return '';
+        return '"' + String(str).replace(/"/g, '""') + '"';
+      }
+
+      function parseCSV(text) {
+        const lines = text.split('\n').filter(l => l.trim() !== '');
+        const users = [];
+        const tasks = [];
+        const issues = [];
+        const logs = [];
+        const roles = [];
+        for (let line of lines) {
+          const parsed = parseCSVLine(line);
+          if (parsed[0] === 'U') {
+            users.push({
+              id: parsed[1],
+              username: parsed[2],
+              email: parsed[3],
+              password: parsed[4],
+              roleId: parsed[5],
+              managerId: parsed[6] || null
+            });
+          } else if (parsed[0] === 'T') {
+            tasks.push({
+              id: parsed[1],
+              title: parsed[2],
+              description: parsed[3],
+              status: parsed[4],
+              progress: parseInt(parsed[5], 10) || 0,
+              assignedTo: parsed[6] || null,
+              startDate: parsed[7] || '',
+              deadline: parsed[8] || '',
+              priority: parsed[9] || 'medium',
+              holdReason: parsed[10] || null,
+              holdType: parsed[11] || null,
+              holdForUserId: parsed[12] || null,
+              holdComment: parsed[13] || null,
+              comments: JSON.parse(parsed[14] || '[]'),
+              createdAt: parsed[15] ? parseInt(parsed[15], 10) : Date.now()
+            });
+          } else if (parsed[0] === 'I') {
+            issues.push({
+              id: parsed[1],
+              title: parsed[2],
+              description: parsed[3],
+              createdBy: parsed[4],
+              mentions: JSON.parse(parsed[5] || '[]'),
+              createdAt: parsed[6] ? parseInt(parsed[6], 10) : Date.now(),
+              solved: parsed[7] === '1'
+            });
+          } else if (parsed[0] === 'L') {
+            logs.push({
+              id: parsed[1],
+              userId: parsed[2],
+              username: parsed[3],
+              action: parsed[4],
+              details: parsed[5],
+              timestamp: parseInt(parsed[6], 10)
+            });
+          } else if (parsed[0] === 'R') {
+            roles.push({
+              id: parsed[1],
+              name: parsed[2],
+              permissions: JSON.parse(parsed[3] || '[]')
+            });
+          }
+        }
+        return { users, tasks, issues, logs, roles };
+      }
+
+      function parseCSVLine(line) {
+        const result = [];
+        let start = 0;
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          if (line[i] === '"' && (i === 0 || line[i-1] !== '\\')) {
+            inQuotes = !inQuotes;
+          } else if (line[i] === ',' && !inQuotes) {
+            result.push(line.substring(start, i).replace(/^"|"$/g, '').replace(/""/g, '"'));
+            start = i + 1;
+          }
+        }
+        result.push(line.substring(start).replace(/^"|"$/g, '').replace(/""/g, '"'));
+        return result;
+      }
+
+      function startFileWatcher() {
+        if (!hasFileSystemAccess) return;
+        if (watcherInterval) clearInterval(watcherInterval);
+        watcherInterval = setInterval(async () => {
+          if (!fileHandle) return;
+          try {
+            const file = await fileHandle.getFile();
+            if (file.lastModified > lastModified) {
+              if (confirm('The shared CSV file has changed externally. Reload data? (Any unsaved changes will be lost)')) {
+                await loadFromFile();
+                if (currentUser) {
+                  renderSidebar();
+                  renderContent(currentView);
+                }
+              } else {
+                lastModified = file.lastModified;
+              }
+            }
+          } catch (e) {}
+        }, 5000);
+      }
+
+      // ---------- LOCAL STORAGE ----------
+      function loadDataLocal() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          try {
+            const data = JSON.parse(stored);
+            users = data.users || defaultUsers.map(u => ({...u}));
+            tasks = data.tasks || defaultTasks.map(t => ({...t}));
+            issues = data.issues || [];
+            logs = data.logs || [];
+            roles = data.roles || defaultRoles.map(r => ({...r}));
+          } catch (e) {
+            resetToDefaults();
+          }
+        } else {
+          resetToDefaults();
+        }
+        tasks.forEach(t => { if (!t.createdAt) t.createdAt = Date.now(); });
+        issues.forEach(i => { if (!i.createdAt) i.createdAt = Date.now(); });
+      }
+
+      function resetToDefaults() {
+        users = defaultUsers.map(u => ({...u}));
+        tasks = defaultTasks.map(t => ({...t}));
+        issues = [];
+        logs = [];
+        roles = defaultRoles.map(r => ({...r}));
+        saveDataLocal();
+      }
+
+      function saveDataLocal() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ users, tasks, issues, logs, roles }));
+      }
+
+      function saveData() {
+        saveDataLocal();
+        if (fileHandle && hasFileSystemAccess) {
+          saveToFile().catch(err => console.warn('CSV save failed (will retry later):', err));
+        }
+      }
+
+      function addLog(action, details) {
+        if (!currentUser) return;
+        logs.push({ id: generateId('log'), userId: currentUser.id, username: currentUser.username, action, details, timestamp: Date.now() });
+        saveData();
+      }
+
+      function backupData() {
+        const data = { users, tasks, issues, logs, roles };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `flowtask_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        addLog('BACKUP', 'Downloaded JSON backup');
+      }
+
+      function restoreData(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            if (data.users && data.tasks && data.issues !== undefined && data.logs !== undefined && data.roles) {
+              if (confirm('Replace all current data with the backup? This cannot be undone.')) {
+                users = data.users;
+                tasks = data.tasks;
+                issues = data.issues;
+                logs = data.logs;
+                roles = data.roles;
+                saveData();
+                addLog('RESTORE', 'Restored data from JSON backup');
+                alert('Restore complete. Refreshing view.');
+                if (currentUser) {
+                  renderSidebar();
+                  renderContent(currentView);
+                }
+              }
+            } else {
+              alert('Invalid backup file: missing users, tasks, issues, logs, or roles.');
+            }
+          } catch (err) {
+            alert('Error parsing backup file: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      // ---------- IMPORT TASKS FROM CSV (admin only) ----------
+      function importTasksFromCSV(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const csv = e.target.result;
+          const lines = csv.split('\n').filter(l => l.trim() !== '');
+          if (lines.length === 0) { alert('File is empty'); return; }
+          // Skip header if present
+          const dataLines = lines.slice(1);
+          let added = 0, updated = 0;
+          dataLines.forEach(line => {
+            const parsed = parseCSVLine(line);
+            if (parsed.length < 9) return;
+            const id = parsed[0] || generateId('t');
+            const title = parsed[1] || '';
+            const description = parsed[2] || '';
+            const status = parsed[3] || 'todo';
+            const progress = parseInt(parsed[4], 10) || 0;
+            const assignedToUsername = parsed[5] || '';
+            const priority = parsed[6] || 'medium';
+            const startDate = parsed[7] || '';
+            const deadline = parsed[8] || '';
+            const createdAt = parsed[9] ? parseInt(parsed[9], 10) : Date.now();
+
+            let assignedTo = null;
+            if (assignedToUsername) {
+              const user = users.find(u => u.username === assignedToUsername);
+              if (user) assignedTo = user.id;
+            }
+
+            const existingIndex = tasks.findIndex(t => t.id === id);
+            if (existingIndex >= 0) {
+              tasks[existingIndex] = { ...tasks[existingIndex], title, description, status, progress, assignedTo, priority, startDate, deadline, createdAt };
+              updated++;
+            } else {
+              tasks.push({
+                id,
+                title,
+                description,
+                status,
+                progress,
+                assignedTo,
+                priority,
+                startDate,
+                deadline,
+                holdReason: null,
+                holdType: null,
+                holdForUserId: null,
+                holdComment: null,
+                comments: [],
+                createdAt
+              });
+              added++;
+            }
+          });
+          saveData();
+          addLog('IMPORT_TASKS', `Imported ${added} new, updated ${updated} tasks from CSV`);
+          alert(`Import complete: ${added} tasks added, ${updated} tasks updated.`);
+          if (currentView === 'tasks') {
+            renderTaskList();
+          } else {
+            renderContent(currentView);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      function getUser(id) { return users.find(u => u.id === id); }
+      function getUserByUsername(username) { return users.find(u => u.username === username); }
+      function getRole(roleId) { return roles.find(r => r.id === roleId); }
+      function getRoleName(roleId) { const r = getRole(roleId); return r ? r.name : 'Unknown'; }
+      function getMemberName(userId) { const u = getUser(userId); return u ? u.username : 'Unassigned'; }
+      function generateId(prefix) { return prefix + Date.now() + '-' + Math.random().toString(36).substr(2, 6); }
+      function hasPermission(perm) { if (!currentUser) return false; const role = getRole(currentUser.roleId); return role ? role.permissions.includes(perm) : false; }
+
+      // ---------- AUTH ----------
+      let currentUser = null;
+      let currentView = 'dashboard';
+
+      function setCurrentUser(user) {
+        currentUser = user;
+        if (user) sessionStorage.setItem('currentUser', JSON.stringify({ id: user.id, username: user.username, roleId: user.roleId, email: user.email }));
+        else sessionStorage.removeItem('currentUser');
+      }
+
+      function loadSession() {
+        const sess = sessionStorage.getItem('currentUser');
+        if (sess) {
+          try {
+            const { id } = JSON.parse(sess);
+            const user = users.find(u => u.id === id);
+            if (user) currentUser = user;
+          } catch (e) {}
+        }
+      }
+
+      function login(username, password) {
+        const user = getUserByUsername(username);
+        if (user && user.password === password) {
+          setCurrentUser(user);
+          addLog('LOGIN', 'User logged in');
+          return true;
+        }
+        return false;
+      }
+
+      function logout() {
+        if (currentUser) addLog('LOGOUT', 'User logged out');
+        setCurrentUser(null);
+      }
+
+      // ---------- INITIAL DATA LOAD ----------
+      loadDataLocal();
+
+      const isFirstRun = !localStorage.getItem(FIRST_RUN_KEY);
+      if (isFirstRun) {
+        localStorage.setItem(FIRST_RUN_KEY, 'true');
+        const adminUser = users.find(u => u.username === 'admin');
+        if (adminUser) setCurrentUser(adminUser);
+      }
+
+      // ---------- UI ELEMENTS ----------
+      const loginScreen = document.getElementById('loginScreen');
+      const appContainer = document.getElementById('appContainer');
+      const loginBtn = document.getElementById('loginBtn');
+      const loginError = document.getElementById('loginError');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const currentUserDisplay = document.getElementById('currentUserDisplay');
+      const currentRoleDisplay = document.getElementById('currentRoleDisplay');
+      const sidebar = document.getElementById('sidebar');
+      const taskPanel = document.getElementById('taskPanel');
+      const detailPanel = document.getElementById('detailPanel');
+      const fullWidthContent = document.getElementById('fullWidthContent');
+      const filterTabs = document.getElementById('filterTabs');
+      const newTaskBtn = document.getElementById('newTaskBtn');
+      const importBtn = document.getElementById('importBtn');
+      const syncFolderBtn = document.getElementById('syncFolderBtn');
+      const syncNowBtn = document.getElementById('syncNowBtn');
+      const backupBtn = document.getElementById('backupBtn');
+      const restoreBtn = document.getElementById('restoreBtn');
+      const restoreFileInput = document.getElementById('restoreFileInput');
+      const importFileInput = document.getElementById('importFileInput');
+      const themeToggle = document.getElementById('themeToggle');
+      const exportBtn = document.getElementById('exportBtn');
+      const taskListContainer = document.getElementById('taskListContainer');
+      const taskDetailView = document.getElementById('taskDetailView');
+      const emptyState = document.getElementById('emptyState');
+      const menuToggle = document.getElementById('menuToggle');
+      const backToListBtn = document.getElementById('backToListBtn');
+      const searchTask = document.getElementById('searchTask');
+      const filterUser = document.getElementById('filterUser');
+
+      // Modals
+      const userInfoModal = document.getElementById('userInfoModal');
+      const closeUserInfoModal = document.getElementById('closeUserInfoModal');
+      const userInfoContent = document.getElementById('userInfoContent');
+      const roleModal = document.getElementById('roleModal');
+      const closeRoleModal = document.getElementById('closeRoleModal');
+      const roleModalTitle = document.getElementById('roleModalTitle');
+      const roleNameInput = document.getElementById('roleName');
+      const permissionsContainer = document.getElementById('permissionsContainer');
+      const saveRoleBtn = document.getElementById('saveRoleBtn');
+      const holdModal = document.getElementById('holdModal');
+      const closeHoldModal = document.getElementById('closeHoldModal');
+      const holdType = document.getElementById('holdType');
+      const holdUserSelectGroup = document.getElementById('holdUserSelectGroup');
+      const holdForUserSelect = document.getElementById('holdForUser');
+      const holdReason = document.getElementById('holdReason');
+      const submitHoldBtn = document.getElementById('submitHoldBtn');
+      const holdTaskId = document.getElementById('holdTaskId');
+      const issueModal = document.getElementById('issueModal');
+      const closeIssueModal = document.getElementById('closeIssueModal');
+      const issueModalTitle = document.getElementById('issueModalTitle');
+      const issueEditId = document.getElementById('issueEditId');
+      const issueTitle = document.getElementById('issueTitle');
+      const issueDesc = document.getElementById('issueDesc');
+      const issueMentions = document.getElementById('issueMentions');
+      const createIssueBtn = document.getElementById('createIssueBtn');
+      const profileModal = document.getElementById('profileModal');
+      const closeProfileModal = document.getElementById('closeProfileModal');
+      const profileCurrentPassword = document.getElementById('profileCurrentPassword');
+      const profileNewUsername = document.getElementById('profileNewUsername');
+      const profileNewEmail = document.getElementById('profileNewEmail');
+      const profileNewPassword = document.getElementById('profileNewPassword');
+      const profileConfirmPassword = document.getElementById('profileConfirmPassword');
+      const saveProfileBtn = document.getElementById('saveProfileBtn');
+
+      let editingRoleId = null;
+      let currentTaskId = null;
+      let currentFilter = 'all';
+      let searchQuery = '';
+      let selectedUserFilter = '';
+
+      // Toggle sidebar on mobile
+      menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+      });
+      // Close sidebar when clicking outside
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !menuToggle.contains(e.target) && sidebar.classList.contains('open')) {
+          sidebar.classList.remove('open');
+        }
+      });
+
+      // Back to list on mobile
+      backToListBtn.addEventListener('click', () => {
+        taskPanel.scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // Search and filter events
+      searchTask.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase();
+        renderTaskList();
+      });
+      filterUser.addEventListener('change', (e) => {
+        selectedUserFilter = e.target.value;
+        renderTaskList();
+      });
+
+      closeUserInfoModal.addEventListener('click', () => userInfoModal.classList.remove('active'));
+      closeRoleModal.addEventListener('click', () => roleModal.classList.remove('active'));
+      closeHoldModal.addEventListener('click', () => holdModal.classList.remove('active'));
+      closeIssueModal.addEventListener('click', () => issueModal.classList.remove('active'));
+      closeProfileModal.addEventListener('click', () => profileModal.classList.remove('active'));
+
+      if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+      themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+        localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+      });
+
+      function showTaskView() {
+        taskPanel.style.display = 'flex';
+        detailPanel.style.display = 'block';
+        fullWidthContent.style.display = 'none';
+        filterTabs.style.display = 'flex';
+        newTaskBtn.style.display = 'block';
+        // Populate user filter dropdown
+        filterUser.innerHTML = '<option value="">All Users</option>' + users.map(u => `<option value="${u.id}">${escapeHTML(u.username)}</option>`).join('');
+        // Show/hide user filter based on role (admin or manager)
+        if (currentUser.roleId === 'r1' || currentUser.roleId === 'r2') {
+          filterUser.style.display = 'inline-block';
+        } else {
+          filterUser.style.display = 'none';
+          // Clear any previous filter
+          selectedUserFilter = '';
+          filterUser.value = '';
+        }
+      }
+
+      function showFullWidthContent(html) {
+        taskPanel.style.display = 'none';
+        detailPanel.style.display = 'none';
+        fullWidthContent.style.display = 'block';
+        fullWidthContent.innerHTML = html;
+        if (window.innerWidth <= 768) sidebar.classList.remove('open');
+      }
+
+      function getUnsolvedIssuesCount() {
+        return issues.filter(issue => {
+          if (issue.solved) return false;
+          if (!hasPermission('view_issues')) return false;
+          if (currentUser.roleId === 'r1') return true;
+          if (issue.createdBy === currentUser.id) return true;
+          if (issue.mentions && issue.mentions.includes(currentUser.id)) return true;
+          return false;
+        }).length;
+      }
+
+      function renderSidebar() {
+        let menuItems = [];
+        if (hasPermission('manage_users')) menuItems.push({ id: 'users', icon: 'fa-users-cog', label: 'Manage Users' });
+        if (hasPermission('manage_roles')) menuItems.push({ id: 'roles', icon: 'fa-user-tag', label: 'Manage Roles' });
+        if (hasPermission('view_issues')) menuItems.push({ id: 'issues', icon: 'fa-exclamation-circle', label: 'Issues' });
+        if (hasPermission('view_hold')) menuItems.push({ id: 'holdtasks', icon: 'fa-pause-circle', label: 'Hold Tasks' });
+        if (hasPermission('view_logs')) menuItems.push({ id: 'logs', icon: 'fa-history', label: 'Audit Logs' });
+        if (hasPermission('view_performance')) menuItems.push({ id: 'performance', icon: 'fa-tachometer-alt', label: 'Team Performance' });
+        if (hasPermission('view_gantt')) menuItems.push({ id: 'gantt', icon: 'fa-chart-line', label: 'Timeline (Gantt)' });
+        if (hasPermission('view_tasks')) menuItems.push({ id: 'tasks', icon: 'fa-tasks', label: currentUser.roleId === 'r3' ? 'My Tasks' : 'All Tasks' });
+        if (hasPermission('create_task')) menuItems.push({ id: 'newtask', icon: 'fa-plus-circle', label: 'New Task' });
+        if (hasPermission('export_own')) menuItems.push({ id: 'export', icon: 'fa-download', label: 'Export My Tasks' });
+        menuItems.push({ id: 'orgchart', icon: 'fa-sitemap', label: 'Org Chart' });
+        menuItems.push({ id: 'profile', icon: 'fa-user-edit', label: 'Profile' });
+        if (hasPermission('system_update')) menuItems.push({ id: 'system', icon: 'fa-cog', label: 'System Update' });
+        menuItems.unshift({ id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard' });
+
+        // Import button only for admin (roleId 'r1')
+        importBtn.style.display = currentUser.roleId === 'r1' ? 'inline-flex' : 'none';
+
+        if (currentUser.roleId === 'r1') {
+          if (hasFileSystemAccess) {
+            syncFolderBtn.style.display = 'inline-flex';
+            syncNowBtn.style.display = fileHandle ? 'inline-flex' : 'none';
+          } else {
+            syncFolderBtn.style.display = 'none';
+            syncNowBtn.style.display = 'none';
+          }
+          backupBtn.style.display = 'inline-flex';
+          restoreBtn.style.display = 'inline-flex';
+        } else {
+          syncFolderBtn.style.display = 'none';
+          syncNowBtn.style.display = 'none';
+          backupBtn.style.display = 'none';
+          restoreBtn.style.display = 'none';
+        }
+
+        const unsolvedCount = getUnsolvedIssuesCount();
+        sidebar.innerHTML = menuItems.map(item => {
+          let badge = '';
+          if (item.id === 'issues' && unsolvedCount > 0) badge = `<span class="badge">${unsolvedCount}</span>`;
+          return `<div class="menu-item" data-view="${item.id}"><i class="fas ${item.icon}"></i> ${item.label}${badge}</div>`;
+        }).join('');
+        sidebar.querySelectorAll('.menu-item').forEach(el => {
+          el.addEventListener('click', () => {
+            sidebar.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            el.classList.add('active');
+            currentView = el.dataset.view;
+            renderContent(currentView);
+            if (window.innerWidth <= 768) sidebar.classList.remove('open');
+          });
+        });
+        if (sidebar.firstElementChild) sidebar.firstElementChild.classList.add('active');
+      }
+
+      function renderContent(view) {
+        if (view === 'dashboard') renderDashboard();
+        else if (view === 'logs' && hasPermission('view_logs')) renderAuditLogs();
+        else if (view === 'users' && hasPermission('manage_users')) renderUserManagement();
+        else if (view === 'roles' && hasPermission('manage_roles')) renderRoleManagement();
+        else if (view === 'issues' && hasPermission('view_issues')) renderIssuesList();
+        else if (view === 'holdtasks' && hasPermission('view_hold')) renderHoldTasks();
+        else if (view === 'performance' && hasPermission('view_performance')) renderTeamPerformance();
+        else if (view === 'gantt' && hasPermission('view_gantt')) renderGantt();
+        else if (view === 'tasks' && hasPermission('view_tasks')) {
+          showTaskView();
+          renderTaskList();
+          if (tasks.length > 0) selectTask(tasks[0].id);
+        } else if (view === 'newtask' && hasPermission('create_task')) renderNewTaskForm();
+        else if (view === 'export' && hasPermission('export_own')) exportMyTasks();
+        else if (view === 'orgchart') renderOrgChart();
+        else if (view === 'profile') openProfileModal();
+        else if (view === 'system' && hasPermission('system_update')) renderSystemUpdate();
+        else renderDashboard();
+      }
+
+      // ========== IMPLEMENTATION OF ALL FUNCTIONS ==========
+      function escapeHTML(str) {
+        return String(str).replace(/[&<>"]/g, function(m) {
+          if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; if (m === '"') return '&quot;';
+          return m;
+        });
+      }
+
+      // ----- DASHBOARD -----
+      function renderDashboard() {
+        const total = tasks.length;
+        const done = tasks.filter(t => t.status === 'done').length;
+        const inProgress = tasks.filter(t => t.status === 'in-progress').length;
+        const todo = tasks.filter(t => t.status === 'todo').length;
+        let html = `
+          <h2>Dashboard</h2>
+          <div class="grid">
+            <div class="card"><h4>Total Tasks</h4><div class="value">${total}</div></div>
+            <div class="card"><h4>Completed</h4><div class="value">${done}</div></div>
+            <div class="card"><h4>In Progress</h4><div class="value">${inProgress}</div></div>
+            <div class="card"><h4>To Do</h4><div class="value">${todo}</div></div>
+          </div>
+          <div class="section"><div class="chart-container"><canvas id="statusChart"></canvas></div></div>
+        `;
+        showFullWidthContent(html);
+        setTimeout(() => {
+          const ctx = document.getElementById('statusChart')?.getContext('2d');
+          if (ctx) {
+            new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                labels: ['Completed', 'In Progress', 'To Do'],
+                datasets: [{ data: [done, inProgress, todo], backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'] }]
+              },
+              options: { responsive: true, maintainAspectRatio: true }
+            });
+          }
+        }, 100);
+      }
+
+      // ----- AUDIT LOGS -----
+      function renderAuditLogs() {
+        let html = '<h2>Audit Logs</h2><div style="overflow-x:auto;"><table class="logs-table"><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr>';
+        logs.slice().reverse().forEach(log => {
+          html += `<tr><td>${new Date(log.timestamp).toLocaleString()}</td><td>${escapeHTML(log.username)}</td><td>${escapeHTML(log.action)}</td><td>${escapeHTML(log.details)}</td></tr>`;
+        });
+        html += '</table></div>';
+        showFullWidthContent(html);
+      }
+
+      // ----- USER MANAGEMENT (with manager assignment) -----
+      function renderUserManagement() {
+        let html = '<h2>Manage Users</h2>';
+        html += '<button class="btn" id="addUserBtn"><i class="fas fa-plus"></i> Add User</button>';
+        html += '<div style="overflow-x:auto; margin-top:1rem;"><table class="user-table"><tr><th>Username</th><th>Email</th><th>Role</th><th>Manager</th><th>Actions</th></tr>';
+        users.forEach(u => {
+          const manager = u.managerId ? getUser(u.managerId) : null;
+          html += `<tr>
+            <td>${escapeHTML(u.username)}</td>
+            <td>${escapeHTML(u.email)}</td>
+            <td>${escapeHTML(getRoleName(u.roleId))}</td>
+            <td>${manager ? escapeHTML(manager.username) : '—'}</td>
+            <td>
+              <button class="btn-secondary edit-user" data-id="${u.id}"><i class="fas fa-edit"></i></button>
+              <button class="btn-secondary delete-user" data-id="${u.id}"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`;
+        });
+        html += '</table></div>';
+        showFullWidthContent(html);
+        document.getElementById('addUserBtn')?.addEventListener('click', () => openUserModal());
+        document.querySelectorAll('.edit-user').forEach(btn => btn.addEventListener('click', (e) => openUserModal(e.target.dataset.id)));
+        document.querySelectorAll('.delete-user').forEach(btn => btn.addEventListener('click', (e) => deleteUser(e.target.dataset.id)));
+      }
+
+      function openUserModal(userId = null) {
+        const user = userId ? getUser(userId) : null;
+        const title = user ? 'Edit User' : 'Add User';
+        const managerOptions = users
+          .filter(u => u.id !== (user ? user.id : ''))
+          .map(u => `<option value="${u.id}" ${user && user.managerId === u.id ? 'selected' : ''}>${escapeHTML(u.username)}</option>`).join('');
+        const html = `
+          <div class="modal active" id="userModal">
+            <div class="modal-content">
+              <div class="modal-header"><h3>${title}</h3><button class="close-modal" id="closeUserModal">&times;</button></div>
+              <div class="form-group"><label>Username</label><input type="text" id="userUsername" value="${user ? escapeHTML(user.username) : ''}"></div>
+              <div class="form-group"><label>Email</label><input type="email" id="userEmail" value="${user ? escapeHTML(user.email) : ''}"></div>
+              <div class="form-group"><label>Password</label><input type="password" id="userPassword" placeholder="${user ? 'Leave blank to keep current' : ''}"></div>
+              <div class="form-group"><label>Role</label><select id="userRole">${roles.map(r => `<option value="${r.id}" ${user && user.roleId === r.id ? 'selected' : ''}>${escapeHTML(r.name)}</option>`).join('')}</select></div>
+              <div class="form-group"><label>Manager (reports to)</label><select id="userManager"><option value="">None</option>${managerOptions}</select></div>
+              <button class="btn" id="saveUserBtn">Save</button>
+            </div>
+          </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+        const modal = document.getElementById('userModal');
+        document.getElementById('closeUserModal').addEventListener('click', () => modal.remove());
+        document.getElementById('saveUserBtn').addEventListener('click', () => {
+          const username = document.getElementById('userUsername').value.trim();
+          const email = document.getElementById('userEmail').value.trim();
+          const password = document.getElementById('userPassword').value;
+          const roleId = document.getElementById('userRole').value;
+          const managerId = document.getElementById('userManager').value || null;
+          if (!username || !email || (!user && !password)) { alert('Please fill all fields'); return; }
+          if (user) {
+            user.username = username;
+            user.email = email;
+            if (password) user.password = password;
+            user.roleId = roleId;
+            user.managerId = managerId;
+            addLog('USER_UPDATE', `Updated user ${username}`);
+          } else {
+            if (users.find(u => u.username === username)) { alert('Username already exists'); return; }
+            const newUser = { id: generateId('u'), username, email, password, roleId, managerId };
+            users.push(newUser);
+            addLog('USER_CREATE', `Created user ${username}`);
+          }
+          saveData();
+          modal.remove();
+          renderUserManagement();
+        });
+      }
+
+      function deleteUser(userId) {
+        if (!confirm('Delete user? This may affect task assignments.')) return;
+        users = users.filter(u => u.id !== userId);
+        tasks.forEach(t => { if (t.assignedTo === userId) t.assignedTo = null; });
+        addLog('USER_DELETE', `Deleted user ${userId}`);
+        saveData();
+        renderUserManagement();
+      }
+
+      // ----- ROLE MANAGEMENT (unchanged) -----
+      function renderRoleManagement() {
+        let html = '<h2>Manage Roles</h2>';
+        html += '<button class="btn" id="addRoleBtn"><i class="fas fa-plus"></i> Add Role</button>';
+        html += '<div style="overflow-x:auto; margin-top:1rem;"><table class="roles-table"><tr><th>Role Name</th><th>Permissions</th><th>Actions</th></tr>';
+        roles.forEach(r => {
+          const permNames = r.permissions.map(p => allPermissions.find(ap => ap.id === p)?.label || p).join(', ');
+          html += `<tr>
+            <td>${escapeHTML(r.name)}</td>
+            <td>${escapeHTML(permNames)}</td>
+            <td>
+              <button class="btn-secondary edit-role" data-id="${r.id}"><i class="fas fa-edit"></i></button>
+              <button class="btn-secondary delete-role" data-id="${r.id}"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`;
+        });
+        html += '</table></div>';
+        showFullWidthContent(html);
+        document.getElementById('addRoleBtn')?.addEventListener('click', () => openRoleModal());
+        document.querySelectorAll('.edit-role').forEach(btn => btn.addEventListener('click', (e) => openRoleModal(e.target.dataset.id)));
+        document.querySelectorAll('.delete-role').forEach(btn => btn.addEventListener('click', (e) => deleteRole(e.target.dataset.id)));
+      }
+
+      function openRoleModal(roleId = null) {
+        const role = roleId ? roles.find(r => r.id === roleId) : null;
+        editingRoleId = roleId;
+        roleModalTitle.innerText = role ? 'Edit Role' : 'Add Role';
+        roleNameInput.value = role ? role.name : '';
+        permissionsContainer.innerHTML = allPermissions.map(p => `
+          <div class="permission-item">
+            <input type="checkbox" id="perm_${p.id}" value="${p.id}" ${role && role.permissions.includes(p.id) ? 'checked' : ''}>
+            <label for="perm_${p.id}">${escapeHTML(p.label)}</label>
+          </div>
+        `).join('');
+        roleModal.classList.add('active');
+      }
+
+      saveRoleBtn.addEventListener('click', () => {
+        const name = roleNameInput.value.trim();
+        if (!name) { alert('Role name required'); return; }
+        const selected = Array.from(permissionsContainer.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+        if (editingRoleId) {
+          const role = roles.find(r => r.id === editingRoleId);
+          if (role) { role.name = name; role.permissions = selected; }
+          addLog('ROLE_UPDATE', `Updated role ${name}`);
+        } else {
+          if (roles.find(r => r.name === name)) { alert('Role name already exists'); return; }
+          roles.push({ id: generateId('r'), name, permissions: selected });
+          addLog('ROLE_CREATE', `Created role ${name}`);
+        }
+        saveData();
+        roleModal.classList.remove('active');
+        renderRoleManagement();
+      });
+
+      function deleteRole(roleId) {
+        if (roleId === 'r1') { alert('Cannot delete admin role'); return; }
+        if (!confirm('Delete role? Users with this role will be unassigned.')) return;
+        roles = roles.filter(r => r.id !== roleId);
+        users.forEach(u => { if (u.roleId === roleId) u.roleId = 'r3'; });
+        addLog('ROLE_DELETE', `Deleted role ${roleId}`);
+        saveData();
+        renderRoleManagement();
+      }
+
+      // ----- ISSUES (enhanced) -----
+      function renderIssuesList() {
+        const filtered = issues.sort((a,b) => a.solved - b.solved);
+        let html = '<h2>Issues</h2><button class="btn" id="createIssueBtnHeader"><i class="fas fa-plus"></i> New Issue</button><div id="issuesList">';
+        filtered.forEach(i => {
+          const creator = getUser(i.createdBy)?.username || 'Unknown';
+          const mentionNames = (i.mentions || []).map(m => getUser(m)?.username || 'Unknown').join(', ');
+          const canSolve = (i.createdBy === currentUser.id || (i.mentions && i.mentions.includes(currentUser.id)) || hasPermission('solve_issue'));
+          const canEdit = (i.createdBy === currentUser.id || hasPermission('edit_issue'));
+          html += `<div class="issue-card ${i.solved ? 'solved' : ''}" data-id="${i.id}">
+            <div class="issue-title">
+              <span>${escapeHTML(i.title)}</span>
+              <span>${i.solved ? '✅ Solved' : '⏳ Open'}</span>
+            </div>
+            <div class="issue-meta"><span>By: ${escapeHTML(creator)}</span><span>${new Date(i.createdAt).toLocaleDateString()}</span></div>
+            <div class="issue-description">${escapeHTML(i.description)}</div>
+            ${mentionNames ? `<div class="issue-mentions"><i class="fas fa-at"></i> ${escapeHTML(mentionNames)}</div>` : ''}
+            <div class="issue-actions">
+              ${canSolve ? `<button class="solve-btn" data-id="${i.id}">${i.solved ? 'Mark Unsolved' : 'Mark Solved'}</button>` : ''}
+              ${canEdit ? `<button class="edit-issue-btn" data-id="${i.id}"><i class="fas fa-edit"></i> Edit</button>` : ''}
+            </div>
+          </div>`;
+        });
+        html += '</div>';
+        showFullWidthContent(html);
+        document.getElementById('createIssueBtnHeader')?.addEventListener('click', () => openIssueModal());
+        document.querySelectorAll('.solve-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); toggleIssueSolved(e.target.dataset.id); }));
+        document.querySelectorAll('.edit-issue-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); openIssueModal(e.target.dataset.id); }));
+      }
+
+      function openIssueModal(issueId = null) {
+        const issue = issueId ? issues.find(i => i.id === issueId) : null;
+        issueModalTitle.innerText = issue ? 'Edit Issue' : 'Create Issue';
+        issueEditId.value = issue ? issue.id : '';
+        issueTitle.value = issue ? issue.title : '';
+        issueDesc.value = issue ? issue.description : '';
+        issueMentions.innerHTML = users.map(u => `<option value="${u.id}" ${issue && issue.mentions && issue.mentions.includes(u.id) ? 'selected' : ''}>${escapeHTML(u.username)}</option>`).join('');
+        issueModal.classList.add('active');
+      }
+
+      createIssueBtn.addEventListener('click', () => {
+        const id = issueEditId.value;
+        const title = issueTitle.value.trim();
+        const desc = issueDesc.value.trim();
+        const mentions = Array.from(issueMentions.selectedOptions).map(o => o.value);
+        if (!title || !desc) { alert('Title and description required'); return; }
+        if (id) {
+          const issue = issues.find(i => i.id === id);
+          if (issue) {
+            issue.title = title;
+            issue.description = desc;
+            issue.mentions = mentions;
+            addLog('ISSUE_EDIT', `Edited issue: ${title}`);
+          }
+        } else {
+          const issue = {
+            id: generateId('i'),
+            title,
+            description: desc,
+            createdBy: currentUser.id,
+            mentions,
+            createdAt: Date.now(),
+            solved: false
+          };
+          issues.push(issue);
+          addLog('ISSUE_CREATE', `Created issue: ${title}`);
+        }
+        saveData();
+        issueModal.classList.remove('active');
+        renderIssuesList();
+        renderSidebar();
+      });
+
+      function toggleIssueSolved(issueId) {
+        const issue = issues.find(i => i.id === issueId);
+        if (issue) {
+          issue.solved = !issue.solved;
+          addLog('ISSUE_TOGGLE', `Toggled issue solved: ${issue.title} -> ${issue.solved}`);
+          saveData();
+          renderIssuesList();
+          renderSidebar();
+        }
+      }
+
+      // ----- HOLD TASKS (unchanged) -----
+      function renderHoldTasks() {
+        const holdTasks = tasks.filter(t => t.status === 'hold');
+        let html = '<h2>Hold Tasks</h2>';
+        if (holdTasks.length === 0) html += '<p>No tasks on hold.</p>';
+        else {
+          holdTasks.forEach(t => {
+            const holder = t.holdForUserId ? getUser(t.holdForUserId)?.username : 'General';
+            html += `<div class="task-card" data-id="${t.id}">
+              <div class="task-title">${escapeHTML(t.title)} <span class="task-badge">HOLD</span></div>
+              <div class="task-meta">Holder: ${escapeHTML(holder)}</div>
+              <div class="task-meta">Reason: ${escapeHTML(t.holdReason || '')}</div>
+              <button class="btn-secondary release-hold" data-id="${t.id}">Release</button>
+            </div>`;
+          });
+        }
+        showFullWidthContent(html);
+        document.querySelectorAll('.release-hold').forEach(btn => btn.addEventListener('click', (e) => releaseHold(e.target.dataset.id)));
+      }
+
+      function releaseHold(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+          task.status = 'todo';
+          task.holdReason = null;
+          task.holdType = null;
+          task.holdForUserId = null;
+          task.holdComment = null;
+          addLog('TASK_RELEASE', `Released hold on task: ${task.title}`);
+          saveData();
+          renderHoldTasks();
+        }
+      }
+
+      // ----- TEAM PERFORMANCE (unchanged) -----
+      function renderTeamPerformance() {
+        const total = tasks.length;
+        const done = tasks.filter(t => t.status === 'done').length;
+        const byUser = {};
+        tasks.forEach(t => {
+          if (t.assignedTo) {
+            if (!byUser[t.assignedTo]) byUser[t.assignedTo] = { total:0, done:0 };
+            byUser[t.assignedTo].total++;
+            if (t.status === 'done') byUser[t.assignedTo].done++;
+          }
+        });
+        let html = '<h2>Team Performance</h2><div class="grid"><div class="card"><h4>Completion Rate</h4><div class="value">' + (total?Math.round(done/total*100):0) + '%</div></div></div>';
+        html += '<h3>Per User</h3><div style="overflow-x:auto;"><table class="user-table"><tr><th>User</th><th>Tasks</th><th>Completed</th><th>Efficiency</th></tr>';
+        Object.keys(byUser).forEach(uid => {
+          const u = getUser(uid);
+          const {total, done} = byUser[uid];
+          html += `<tr><td>${u ? escapeHTML(u.username) : 'Unknown'}</td><td>${total}</td><td>${done}</td><td>${Math.round(done/total*100)}%</td></tr>`;
+        });
+        html += '</table></div>';
+        showFullWidthContent(html);
+      }
+
+      // ----- GANTT (unchanged) -----
+      function renderGantt() {
+        const now = Date.now();
+        const oneDay = 86400000;
+        const sorted = tasks.filter(t => t.startDate && t.deadline).sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
+        if (sorted.length === 0) { showFullWidthContent('<h2>Gantt Timeline</h2><p>No tasks with dates.</p>'); return; }
+        const min = new Date(sorted[0].startDate).getTime();
+        const max = new Date(sorted[sorted.length-1].deadline).getTime();
+        const range = max - min || oneDay;
+        let html = '<h2>Gantt Timeline</h2><div style="margin-top:2rem;">';
+        sorted.forEach(t => {
+          const start = new Date(t.startDate).getTime();
+          const end = new Date(t.deadline).getTime();
+          const left = ((start - min) / range) * 100;
+          const width = ((end - start) / range) * 100;
+          html += `<div class="gantt-label">${escapeHTML(t.title)} (${getMemberName(t.assignedTo)})</div>
+            <div style="background:#e2e8f0; border-radius:6px; margin-bottom:15px; position:relative;">
+              <div class="gantt-bar" style="width:${width}%; left:${left}%; background:#6366f1; position:relative;"></div>
+            </div>`;
+        });
+        html += '</div>';
+        showFullWidthContent(html);
+      }
+
+      // ----- TASK LIST with search and user filter -----
+      function renderTaskList() {
+        let filtered = tasks;
+        // Apply "My Tasks" if role is engineer and not admin override
+        if (currentUser.roleId === 'r3' && currentView === 'tasks') {
+          filtered = filtered.filter(t => t.assignedTo === currentUser.id);
+        }
+        // Apply status filter
+        if (currentFilter !== 'all') {
+          filtered = filtered.filter(t => t.status === currentFilter);
+        }
+        // Apply user filter (only if visible)
+        if (selectedUserFilter && (currentUser.roleId === 'r1' || currentUser.roleId === 'r2')) {
+          filtered = filtered.filter(t => t.assignedTo === selectedUserFilter);
+        }
+        // Apply search query
+        if (searchQuery) {
+          filtered = filtered.filter(t => t.title.toLowerCase().includes(searchQuery));
+        }
+        filtered.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+        taskListContainer.innerHTML = filtered.map(t => {
+          const statusClass = t.status === 'todo' ? 'status-todo' : t.status === 'in-progress' ? 'status-in-progress' : 'status-done';
+          const assignedName = getMemberName(t.assignedTo);
+          return `<div class="task-card ${t.priority === 'high' ? 'priority-high' : ''}" data-id="${t.id}">
+            <div class="task-title"><span>${escapeHTML(t.title)}</span><span class="task-badge ${statusClass}">${t.status}</span></div>
+            <div class="task-meta"><span><i class="fas fa-user"></i> ${assignedName}</span><span><i class="fas fa-flag"></i> ${t.priority}</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${t.progress}%;"></div></div>
+            <div class="task-dates"><span><i class="fas fa-calendar"></i> ${t.startDate || 'No start'}</span><span><i class="fas fa-hourglass-end"></i> ${t.deadline || 'No deadline'}</span></div>
+          </div>`;
+        }).join('');
+        taskListContainer.querySelectorAll('.task-card').forEach(card => {
+          card.addEventListener('click', () => selectTask(card.dataset.id));
+        });
+      }
+
+      function selectTask(id) {
+        currentTaskId = id;
+        document.querySelectorAll('.task-card').forEach(c => c.classList.remove('selected'));
+        const selectedCard = document.querySelector(`.task-card[data-id="${id}"]`);
+        if (selectedCard) selectedCard.classList.add('selected');
+        renderTaskDetail(id);
+      }
+
+      function renderTaskDetail(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+        emptyState.style.display = 'none';
+        taskDetailView.style.display = 'block';
+        const canEdit = hasPermission('edit_task') || (task.assignedTo === currentUser.id && hasPermission('edit_task'));
+        const canDelete = hasPermission('delete_task');
+        const canHold = hasPermission('hold_task');
+        const commentsHtml = (task.comments || []).map(c => `<div><strong>${escapeHTML(c.user)}</strong> (${new Date(c.time).toLocaleString()}): ${escapeHTML(c.text)}</div>`).join('');
+        const detailHtml = `
+          <div>
+            <h2>${escapeHTML(task.title)}</h2>
+            <p>${escapeHTML(task.description || '')}</p>
+            <div><strong>Status:</strong> ${task.status}</div>
+            <div><strong>Progress:</strong> ${task.progress}%</div>
+            <div><strong>Assigned to:</strong> ${getMemberName(task.assignedTo)}</div>
+            <div><strong>Priority:</strong> ${task.priority}</div>
+            <div><strong>Start:</strong> ${task.startDate || '-'}</div>
+            <div><strong>Deadline:</strong> ${task.deadline || '-'}</div>
+            ${task.holdReason ? `<div><strong>Hold:</strong> ${task.holdReason} (${task.holdType})</div>` : ''}
+            <hr>
+            <h3>Comments</h3>
+            <div id="commentsList">${commentsHtml}</div>
+            <textarea id="newComment" placeholder="Add a comment" rows="2"></textarea>
+            <button class="btn" id="addCommentBtn">Add Comment</button>
+            <hr>
+            ${canEdit ? '<button class="btn" id="editTaskBtn">Edit</button>' : ''}
+            ${canDelete ? '<button class="btn-secondary" id="deleteTaskBtn">Delete</button>' : ''}
+            ${canHold ? '<button class="btn-secondary" id="holdTaskBtn">Hold</button>' : ''}
+          </div>
+        `;
+        taskDetailView.innerHTML = detailHtml;
+        document.getElementById('addCommentBtn')?.addEventListener('click', () => {
+          const text = document.getElementById('newComment').value.trim();
+          if (!text) return;
+          if (!task.comments) task.comments = [];
+          task.comments.push({ user: currentUser.username, time: Date.now(), text });
+          addLog('TASK_COMMENT', `Added comment to task: ${task.title}`);
+          saveData();
+          renderTaskDetail(taskId);
+        });
+        document.getElementById('editTaskBtn')?.addEventListener('click', () => renderEditTaskForm(taskId));
+        document.getElementById('deleteTaskBtn')?.addEventListener('click', () => deleteTask(taskId));
+        document.getElementById('holdTaskBtn')?.addEventListener('click', () => openHoldModal(taskId));
+      }
+
+      function renderEditTaskForm(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+        const html = `
+          <h2>Edit Task</h2>
+          <div class="form-group"><label>Title</label><input type="text" id="editTitle" value="${escapeHTML(task.title)}"></div>
+          <div class="form-group"><label>Description</label><textarea id="editDesc">${escapeHTML(task.description || '')}</textarea></div>
+          <div class="form-group"><label>Status</label><select id="editStatus"><option value="todo" ${task.status==='todo'?'selected':''}>To Do</option><option value="in-progress" ${task.status==='in-progress'?'selected':''}>In Progress</option><option value="done" ${task.status==='done'?'selected':''}>Done</option></select></div>
+          <div class="form-group"><label>Progress</label><input type="range" id="editProgress" min="0" max="100" value="${task.progress}"><span id="progressVal">${task.progress}%</span></div>
+          <div class="form-group"><label>Assigned To</label><select id="editAssigned"><option value="">Unassigned</option>${users.map(u => `<option value="${u.id}" ${task.assignedTo===u.id?'selected':''}>${escapeHTML(u.username)}</option>`).join('')}</select></div>
+          <div class="form-group"><label>Priority</label><select id="editPriority"><option value="low" ${task.priority==='low'?'selected':''}>Low</option><option value="medium" ${task.priority==='medium'?'selected':''}>Medium</option><option value="high" ${task.priority==='high'?'selected':''}>High</option></select></div>
+          <div class="date-row"><div class="form-group"><label>Start Date</label><input type="date" id="editStart" value="${task.startDate||''}"></div><div class="form-group"><label>Deadline</label><input type="date" id="editDeadline" value="${task.deadline||''}"></div></div>
+          <button class="btn" id="saveEditBtn">Save</button>
+        `;
+        taskDetailView.innerHTML = html;
+        document.getElementById('editProgress').addEventListener('input', (e) => document.getElementById('progressVal').innerText = e.target.value + '%');
+        document.getElementById('saveEditBtn').addEventListener('click', () => {
+          task.title = document.getElementById('editTitle').value.trim();
+          task.description = document.getElementById('editDesc').value.trim();
+          task.status = document.getElementById('editStatus').value;
+          task.progress = parseInt(document.getElementById('editProgress').value, 10);
+          task.assignedTo = document.getElementById('editAssigned').value || null;
+          task.priority = document.getElementById('editPriority').value;
+          task.startDate = document.getElementById('editStart').value;
+          task.deadline = document.getElementById('editDeadline').value;
+          addLog('TASK_UPDATE', `Updated task: ${task.title}`);
+          saveData();
+          renderTaskList();
+          selectTask(task.id);
+        });
+      }
+
+      function deleteTask(taskId) {
+        if (!confirm('Delete task?')) return;
+        tasks = tasks.filter(t => t.id !== taskId);
+        addLog('TASK_DELETE', `Deleted task ${taskId}`);
+        saveData();
+        if (currentView === 'tasks') {
+          renderTaskList();
+          if (tasks.length > 0) selectTask(tasks[0].id); else { taskDetailView.style.display = 'none'; emptyState.style.display = 'flex'; }
+        }
+      }
+
+      function createNewTask() {
+        renderNewTaskForm();
+      }
+
+      function renderNewTaskForm() {
+        showTaskView();
+        taskDetailView.style.display = 'block';
+        emptyState.style.display = 'none';
+        // For engineer, assignedTo dropdown is hidden and forced to self
+        const isEngineer = currentUser.roleId === 'r3';
+        const assignedOptions = isEngineer 
+          ? `<option value="${currentUser.id}" selected>${escapeHTML(currentUser.username)}</option>`
+          : `<option value="">Unassigned</option>` + users.map(u => `<option value="${u.id}">${escapeHTML(u.username)}</option>`).join('');
+        const assignedField = isEngineer 
+          ? `<input type="hidden" id="newAssigned" value="${currentUser.id}"><div class="form-group"><label>Assigned To</label><input type="text" value="${escapeHTML(currentUser.username)}" disabled></div>`
+          : `<div class="form-group"><label>Assigned To</label><select id="newAssigned">${assignedOptions}</select></div>`;
+
+        const html = `
+          <h2>New Task</h2>
+          <div class="form-group"><label>Title</label><input type="text" id="newTitle"></div>
+          <div class="form-group"><label>Description</label><textarea id="newDesc"></textarea></div>
+          <div class="form-group"><label>Status</label><select id="newStatus"><option value="todo">To Do</option><option value="in-progress">In Progress</option><option value="done">Done</option></select></div>
+          <div class="form-group"><label>Progress</label><input type="range" id="newProgress" min="0" max="100" value="0"><span id="newProgressVal">0%</span></div>
+          ${assignedField}
+          <div class="form-group"><label>Priority</label><select id="newPriority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+          <div class="date-row"><div class="form-group"><label>Start Date</label><input type="date" id="newStart"></div><div class="form-group"><label>Deadline</label><input type="date" id="newDeadline"></div></div>
+          <button class="btn" id="saveNewBtn">Create Task</button>
+        `;
+        taskDetailView.innerHTML = html;
+        document.getElementById('newProgress').addEventListener('input', (e) => document.getElementById('newProgressVal').innerText = e.target.value + '%');
+        document.getElementById('saveNewBtn').addEventListener('click', () => {
+          const title = document.getElementById('newTitle').value.trim();
+          if (!title) { alert('Title required'); return; }
+          let assignedTo;
+          if (isEngineer) {
+            assignedTo = currentUser.id;
+          } else {
+            assignedTo = document.getElementById('newAssigned').value || null;
+          }
+          const task = {
+            id: generateId('t'),
+            title,
+            description: document.getElementById('newDesc').value.trim(),
+            status: document.getElementById('newStatus').value,
+            progress: parseInt(document.getElementById('newProgress').value, 10),
+            assignedTo,
+            priority: document.getElementById('newPriority').value,
+            startDate: document.getElementById('newStart').value,
+            deadline: document.getElementById('newDeadline').value,
+            holdReason: null, holdType: null, holdForUserId: null, holdComment: null,
+            comments: [],
+            createdAt: Date.now()
+          };
+          tasks.push(task);
+          addLog('TASK_CREATE', `Created task: ${title}`);
+          saveData();
+          renderTaskList();
+          selectTask(task.id);
+        });
+      }
+
+      function openHoldModal(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+        currentHoldTaskId = taskId;
+        holdTaskId.innerText = taskId;
+        holdType.value = 'user';
+        holdUserSelectGroup.style.display = 'block';
+        holdForUserSelect.innerHTML = users.map(u => `<option value="${u.id}">${escapeHTML(u.username)}</option>`).join('');
+        holdReason.value = '';
+        holdModal.classList.add('active');
+      }
+
+      submitHoldBtn.addEventListener('click', () => {
+        const task = tasks.find(t => t.id === currentHoldTaskId);
+        if (!task) return;
+        const type = holdType.value;
+        const reason = holdReason.value.trim();
+        const forUser = type === 'user' ? holdForUserSelect.value : null;
+        if (!reason) { alert('Reason required'); return; }
+        task.status = 'hold';
+        task.holdReason = reason;
+        task.holdType = type;
+        task.holdForUserId = forUser;
+        addLog('TASK_HOLD', `Held task: ${task.title}`);
+        saveData();
+        holdModal.classList.remove('active');
+        if (currentView === 'tasks') {
+          renderTaskList();
+          selectTask(task.id);
+        } else if (currentView === 'holdtasks') renderHoldTasks();
+      });
+
+      // ----- EXPORT (unchanged) -----
+      function exportAllTasks() {
+        const headers = ['ID','Title','Description','Status','Progress','AssignedTo','Priority','Start','Deadline','Created'];
+        const rows = tasks.map(t => [t.id, t.title, t.description, t.status, t.progress, getMemberName(t.assignedTo), t.priority, t.startDate, t.deadline, new Date(t.createdAt).toLocaleString()]);
+        downloadCSV(headers, rows, 'all_tasks.csv');
+        addLog('EXPORT_ALL', 'Exported all tasks');
+      }
+
+      function exportMyTasks() {
+        const myTasks = tasks.filter(t => t.assignedTo === currentUser.id);
+        const headers = ['ID','Title','Description','Status','Progress','Priority','Start','Deadline'];
+        const rows = myTasks.map(t => [t.id, t.title, t.description, t.status, t.progress, t.priority, t.startDate, t.deadline]);
+        downloadCSV(headers, rows, 'my_tasks.csv');
+        addLog('EXPORT_OWN', 'Exported own tasks');
+      }
+
+      function downloadCSV(headers, rows, filename) {
+        let csv = headers.join(',') + '\n';
+        rows.forEach(r => csv += r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // ----- IMPORT TASKS (admin only) -----
+      importBtn.addEventListener('click', () => {
+        importFileInput.click();
+      });
+      importFileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) {
+          importTasksFromCSV(e.target.files[0]);
+        }
+        importFileInput.value = '';
+      });
+
+      // ----- HIERARCHICAL ORG CHART WITH PARALLEL DEPARTMENTS -----
+      function renderOrgChart() {
+        const itUsers = users.filter(u => getRoleName(u.roleId).toLowerCase() === 'admin');
+        const techUsers = users.filter(u => getRoleName(u.roleId).toLowerCase() !== 'admin');
+
+        function buildTreeFromRoots(userList) {
+          const childrenMap = {};
+          userList.forEach(u => {
+            if (u.managerId && userList.some(m => m.id === u.managerId)) {
+              if (!childrenMap[u.managerId]) childrenMap[u.managerId] = [];
+              childrenMap[u.managerId].push(u);
+            }
+          });
+          const topLevel = userList.filter(u => !u.managerId || !userList.some(m => m.id === u.managerId));
+          const renderNode = (userId) => {
+            const u = userList.find(u => u.id === userId);
+            if (!u) return '';
+            const children = childrenMap[userId] || [];
+            const role = getRoleName(u.roleId);
+            let nodeHtml = `<div class="org-node">`;
+            nodeHtml += `<div class="org-card ${role}" onclick="showUserInfo('${u.id}')"><div class="role">${escapeHTML(role)}</div><div class="name">${escapeHTML(u.username)}</div></div>`;
+            if (children.length > 0) {
+              nodeHtml += `<div class="org-children">`;
+              children.forEach(child => {
+                nodeHtml += renderNode(child.id);
+              });
+              nodeHtml += `</div>`;
+            }
+            nodeHtml += `</div>`;
+            return nodeHtml;
+          };
+          let treeHtml = '';
+          topLevel.forEach(u => {
+            treeHtml += renderNode(u.id);
+          });
+          return treeHtml;
+        }
+
+        let html = '<h2>Organizational Chart</h2><div class="org-departments">';
+        html += `<div class="org-department"><h3>IT Department</h3><div class="org-tree">${buildTreeFromRoots(itUsers)}</div></div>`;
+        html += `<div class="org-department"><h3>Technical Office Department</h3><div class="org-tree">${buildTreeFromRoots(techUsers)}</div></div>`;
+        html += '</div>';
+        showFullWidthContent(html);
+
+        window.showUserInfo = (userId) => {
+          const u = getUser(userId);
+          if (!u) return;
+          const manager = u.managerId ? getUser(u.managerId) : null;
+          userInfoContent.innerHTML = `
+            <p><strong>Username:</strong> ${escapeHTML(u.username)}</p>
+            <p><strong>Email:</strong> ${escapeHTML(u.email)}</p>
+            <p><strong>Role:</strong> ${escapeHTML(getRoleName(u.roleId))}</p>
+            <p><strong>Manager:</strong> ${manager ? escapeHTML(manager.username) : '—'}</p>
+          `;
+          userInfoModal.classList.add('active');
+        };
+      }
+
+      // ----- PROFILE MODAL (unchanged) -----
+      function openProfileModal() {
+        profileCurrentPassword.value = '';
+        profileNewUsername.value = currentUser.username;
+        profileNewEmail.value = currentUser.email;
+        profileNewPassword.value = '';
+        profileConfirmPassword.value = '';
+        profileModal.classList.add('active');
+      }
+
+      saveProfileBtn.addEventListener('click', () => {
+        const curPass = profileCurrentPassword.value;
+        if (curPass !== currentUser.password) { alert('Current password incorrect'); return; }
+        const newUsername = profileNewUsername.value.trim();
+        const newEmail = profileNewEmail.value.trim();
+        const newPass = profileNewPassword.value;
+        const confirm = profileConfirmPassword.value;
+        if (!newUsername || !newEmail) { alert('Username and email required'); return; }
+        if (newPass && newPass !== confirm) { alert('New passwords do not match'); return; }
+        if (newUsername !== currentUser.username && users.find(u => u.username === newUsername)) { alert('Username already taken'); return; }
+        currentUser.username = newUsername;
+        currentUser.email = newEmail;
+        if (newPass) currentUser.password = newPass;
+        addLog('PROFILE_UPDATE', 'Updated own profile');
+        saveData();
+        setCurrentUser(currentUser);
+        profileModal.classList.remove('active');
+        currentUserDisplay.innerText = currentUser.username;
+      });
+
+      // ----- SYSTEM UPDATE (unchanged) -----
+      function renderSystemUpdate() {
+        let html = '<h2>System Update</h2>';
+        html += `<p>Current Version: ${APP_VERSION}</p>`;
+        html += '<p>Last Backup: ' + (localStorage.getItem(STORAGE_KEY) ? 'Available' : 'None') + '</p>';
+        html += '<button class="btn" id="clearDataBtn">Clear All Data (Reset to Defaults)</button>';
+        showFullWidthContent(html);
+        document.getElementById('clearDataBtn')?.addEventListener('click', () => {
+          if (confirm('Reset all data to defaults? This cannot be undone.')) {
+            resetToDefaults();
+            addLog('SYSTEM_RESET', 'Reset to default data');
+            if (currentUser) {
+              renderSidebar();
+              renderContent(currentView);
+            }
+          }
+        });
+      }
+
+      // ----- FILTERS -----
+      function initFilters() {
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentFilter = tab.dataset.filter;
+            renderTaskList();
+          });
+        });
+      }
+
+      // ----- EVENT LISTENERS -----
+      loginBtn.addEventListener('click', () => {
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        if (login(username, password)) {
+          loginError.innerText = '';
+          updateUIVisibility();
+        } else {
+          loginError.innerText = 'Invalid username or password';
+        }
+      });
+
+      logoutBtn.addEventListener('click', () => {
+        logout();
+        updateUIVisibility();
+      });
+
+      syncFolderBtn.addEventListener('click', async () => {
+        if (currentUser.roleId !== 'r1') { alert('Only admin can set sync folder.'); return; }
+        if (await pickDirectory()) {
+          alert('Sync folder set. Data will be synced to tasks.enc.');
+          renderSidebar();
+          renderContent(currentView);
+        }
+      });
+
+      syncNowBtn.addEventListener('click', async () => {
+        if (!fileHandle) { alert('No sync folder set.'); return; }
+        if (await loadFromFile()) {
+          alert('Data reloaded from CSV.');
+          if (currentUser) {
+            renderSidebar();
+            renderContent(currentView);
+          }
+        } else {
+          alert('Sync failed (or file empty).');
+        }
+      });
+
+      backupBtn.addEventListener('click', backupData);
+      restoreBtn.addEventListener('click', () => restoreFileInput.click());
+      restoreFileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) restoreData(e.target.files[0]);
+        restoreFileInput.value = '';
+      });
+
+      exportBtn.addEventListener('click', () => {
+        if (hasPermission('export_all')) exportAllTasks();
+        else if (hasPermission('export_own')) exportMyTasks();
+        else alert('No export permission.');
+      });
+
+      newTaskBtn.addEventListener('click', createNewTask);
+
+      // ----- INITIALIZATION -----
+      (async function init() {
+        if (hasFileSystemAccess) {
+          const handle = await loadHandle();
+          if (handle) {
+            directoryHandle = handle;
+            const opts = { mode: 'readwrite' };
+            if (await handle.queryPermission(opts) === 'granted' || await handle.requestPermission(opts) === 'granted') {
+              fileHandle = await directoryHandle.getFileHandle('tasks.enc', { create: true });
+              await loadFromFile();
+              startFileWatcher();
+            } else {
+              await storeHandle(null);
+            }
+          }
+        }
+
+        loadSession();
+        updateUIVisibility();
+        initFilters();
+      })();
+
+      function updateUIVisibility() {
+        if (currentUser) {
+          loginScreen.style.display = 'none';
+          appContainer.style.display = 'flex';
+          currentUserDisplay.innerText = currentUser.username;
+          currentRoleDisplay.innerText = getRoleName(currentUser.roleId);
+          renderSidebar();
+          renderContent(currentView);
+        } else {
+          loginScreen.style.display = 'block';
+          appContainer.style.display = 'none';
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
