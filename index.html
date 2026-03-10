@@ -182,8 +182,7 @@
     .import-btn { background: #8b5cf6 !important; border-color: #8b5cf6 !important; color: white !important; }
     .sync-folder-btn { background: var(--accent) !important; border-color: var(--accent) !important; color: white !important; }
     .sync-now-btn { background: #8b5cf6 !important; border-color: #8b5cf6 !important; color: white !important; }
-    .cloud-url-btn { background: #f59e0b !important; border-color: #f59e0b !important; color: white !important; }
-    .backup-btn { background: #10b981 !important; border-color: #10b981 !important; color: white !important; }
+    .backup-btn { background: #f59e0b !important; border-color: #f59e0b !important; color: white !important; }
     .restore-btn { background: #ef4444 !important; border-color: #ef4444 !important; color: white !important; }
 
     /* HAMBURGER MENU FOR SMALL SCREENS */
@@ -955,9 +954,8 @@
       </div>
       <div class="header-actions">
         <button class="import-btn" id="importBtn" style="display: none;"><i class="fas fa-file-import"></i> Import</button>
-        <button class="sync-folder-btn" id="syncFolderBtn" style="display: none;"><i class="fas fa-folder-open"></i> Set Local Folder</button>
-        <button class="sync-now-btn" id="syncNowBtn" style="display: none;"><i class="fas fa-sync"></i> Sync Local</button>
-        <button class="cloud-url-btn" id="cloudUrlBtn" style="display: none;"><i class="fas fa-cloud-upload-alt"></i> Cloud URL</button>
+        <button class="sync-folder-btn" id="syncFolderBtn" style="display: none;"><i class="fas fa-folder-open"></i> Set Sync</button>
+        <button class="sync-now-btn" id="syncNowBtn" style="display: none;"><i class="fas fa-sync"></i> Sync</button>
         <button class="backup-btn" id="backupBtn" style="display: none;"><i class="fas fa-download"></i> Backup</button>
         <button class="restore-btn" id="restoreBtn" style="display: none;"><i class="fas fa-upload"></i> Restore</button>
         <button class="export-btn" id="exportBtn"><i class="fas fa-file-excel"></i> Export</button>
@@ -1162,22 +1160,6 @@
     </div>
   </div>
 
-  <!-- CLOUD URL MODAL (no token) -->
-  <div id="cloudUrlModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header"><h3>Cloud URL Sync</h3><button class="close-modal" id="closeCloudUrlModal">&times;</button></div>
-      <div class="form-group">
-        <label>JSON File URL (must support GET and PUT)</label>
-        <input type="url" id="cloudUrl" placeholder="https://example.com/data.json">
-        <small>The server must accept PUT requests and have CORS enabled.</small>
-      </div>
-      <button class="btn" id="saveCloudUrlBtn">Save</button>
-      <hr>
-      <button class="btn-secondary" id="loadFromCloudUrlBtn"><i class="fas fa-download"></i> Load from URL</button>
-      <button class="btn-secondary" id="saveToCloudUrlBtn"><i class="fas fa-upload"></i> Save to URL</button>
-    </div>
-  </div>
-
   <!-- IMPORT FILE INPUT (hidden) -->
   <input type="file" id="importFileInput" accept=".csv, text/csv" style="display: none;">
 
@@ -1190,9 +1172,7 @@
       const APP_VERSION = '8.7.0';
       const STORAGE_KEY = 'flowtask_pro';
       const FIRST_RUN_KEY = 'flowtask_first_run';
-
-      // ---------- CLOUD URL CONFIG ----------
-      let cloudUrl = localStorage.getItem('cloud_url') || '';
+      const hasFileSystemAccess = 'showDirectoryPicker' in window;
 
       // ---------- DEFAULTS ----------
       const allPermissions = [
@@ -1321,8 +1301,6 @@
 
       // ---------- INDEXEDDB FOR FOLDER HANDLE ----------
       let db = null;
-      const hasFileSystemAccess = 'showDirectoryPicker' in window;
-
       function openDB() {
         if (!hasFileSystemAccess) return Promise.resolve(null);
         return new Promise((resolve, reject) => {
@@ -1355,7 +1333,7 @@
         });
       }
 
-      // ---------- FILE SYSTEM (LOCAL FOLDER) ----------
+      // ---------- FILE SYSTEM ----------
       let directoryHandle = null;
       let fileHandle = null;
       let lastModified = 0;
@@ -1374,15 +1352,19 @@
           return false; 
         }
         try {
+          // Show directory picker - this works with any folder the user has access to,
+          // including those synced by Dropbox, Google Drive, OneDrive, etc.
           directoryHandle = await window.showDirectoryPicker({
             id: 'flowtask-sync-dir',
             mode: 'readwrite',
             startIn: 'documents'
           });
           
+          // Try to get or create the encrypted file
           try {
             fileHandle = await directoryHandle.getFileHandle('tasks.enc', { create: true });
           } catch (e) {
+            // If we can't create the file, maybe we don't have write permission
             alert('Cannot create sync file in this folder. Make sure you have write permission.');
             return false;
           }
@@ -1392,10 +1374,13 @@
             return false; 
           }
           
+          // Store the handle for future sessions
           await storeHandle(directoryHandle);
           
+          // Try to load existing data
           await loadFromFile();
           
+          // Start watching for external changes
           startFileWatcher();
           
           addLog('SET_SYNC_FOLDER', 'Sync folder configured at: ' + directoryHandle.name);
@@ -1467,193 +1452,6 @@
           console.error('Error writing to CSV:', e);
           return false;
         }
-      }
-
-      function startFileWatcher() {
-        if (!hasFileSystemAccess) return;
-        if (watcherInterval) clearInterval(watcherInterval);
-        watcherInterval = setInterval(async () => {
-          if (!fileHandle) return;
-          try {
-            const file = await fileHandle.getFile();
-            if (file.lastModified > lastModified) {
-              if (confirm('The shared CSV file has changed externally. Reload data? (Any unsaved changes will be lost)')) {
-                await loadFromFile();
-                if (currentUser) {
-                  renderSidebar();
-                  renderContent(currentView);
-                }
-              } else {
-                lastModified = file.lastModified;
-              }
-            }
-          } catch (e) {}
-        }, 5000);
-      }
-
-      // ---------- CLOUD URL FUNCTIONS (plain JSON, no encryption) ----------
-      function getFullData() {
-        return { users, tasks, issues, logs, roles, projects, holidays, weeklyHolidays };
-      }
-
-      function setFullData(data) {
-        users = data.users || users;
-        tasks = data.tasks || tasks;
-        issues = data.issues || issues;
-        logs = data.logs || logs;
-        roles = data.roles || roles;
-        projects = data.projects || projects;
-        holidays = data.holidays || holidays;
-        weeklyHolidays = data.weeklyHolidays || weeklyHolidays;
-      }
-
-      async function saveToCloudUrl() {
-        if (!cloudUrl) return false;
-        try {
-          const response = await fetch(cloudUrl, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(getFullData(), null, 2)
-          });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          console.log('Synced to cloud URL');
-          return true;
-        } catch (err) {
-          console.error('Cloud URL upload failed:', err);
-          alert('Cloud sync failed: ' + err.message);
-          return false;
-        }
-      }
-
-      async function loadFromCloudUrl() {
-        if (!cloudUrl) return false;
-        try {
-          const response = await fetch(cloudUrl, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-          });
-          if (!response.ok) {
-            if (response.status === 404) {
-              console.log('Cloud file does not exist yet.');
-              return false;
-            }
-            throw new Error(`HTTP ${response.status}`);
-          }
-          const data = await response.json();
-          if (data.users && data.tasks && data.issues && data.logs && data.roles && data.projects && data.holidays !== undefined && data.weeklyHolidays !== undefined) {
-            setFullData(data);
-            return true;
-          } else {
-            alert('Invalid JSON structure in cloud file.');
-            return false;
-          }
-        } catch (err) {
-          console.error('Cloud URL download failed:', err);
-          alert('Cloud load failed: ' + err.message);
-          return false;
-        }
-      }
-
-      // ---------- LOCAL STORAGE ----------
-      function loadDataLocal() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          try {
-            const data = JSON.parse(stored);
-            users = data.users || defaultUsers.map(u => ({...u}));
-            tasks = data.tasks || defaultTasks.map(t => ({...t}));
-            issues = data.issues || defaultIssues.map(i => ({...i}));
-            logs = data.logs || [];
-            roles = data.roles || defaultRoles.map(r => ({...r}));
-            projects = data.projects || defaultProjects.map(p => ({...p}));
-            holidays = data.holidays || defaultHolidays;
-            weeklyHolidays = data.weeklyHolidays || defaultWeeklyHolidays;
-          } catch (e) {
-            resetToDefaults();
-          }
-        } else {
-          resetToDefaults();
-        }
-        tasks.forEach(t => { if (!t.createdAt) t.createdAt = Date.now(); });
-        issues.forEach(i => { if (!i.createdAt) i.createdAt = Date.now(); });
-      }
-
-      function resetToDefaults() {
-        users = defaultUsers.map(u => ({...u}));
-        tasks = defaultTasks.map(t => ({...t}));
-        issues = defaultIssues.map(i => ({...i}));
-        logs = [];
-        roles = defaultRoles.map(r => ({...r}));
-        projects = defaultProjects.map(p => ({...p}));
-        holidays = defaultHolidays;
-        weeklyHolidays = defaultWeeklyHolidays;
-        saveDataLocal();
-      }
-
-      function saveDataLocal() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ users, tasks, issues, logs, roles, projects, holidays, weeklyHolidays }));
-      }
-
-      async function saveData() {
-        saveDataLocal();
-        // Try both sync methods if configured
-        if (fileHandle && hasFileSystemAccess) {
-          await saveToFile().catch(err => console.warn('Local file save failed:', err));
-        }
-        if (cloudUrl) {
-          await saveToCloudUrl().catch(err => console.warn('Cloud URL save failed:', err));
-        }
-      }
-
-      function addLog(action, details) {
-        if (!currentUser) return;
-        logs.push({ id: generateId('log'), userId: currentUser.id, username: currentUser.username, action, details, timestamp: Date.now() });
-        saveData();
-      }
-
-      function backupData() {
-        const data = { users, tasks, issues, logs, roles, projects, holidays, weeklyHolidays };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `flowtask_backup_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        addLog('BACKUP', 'Downloaded JSON backup');
-      }
-
-      function restoreData(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const data = JSON.parse(e.target.result);
-            if (data.users && data.tasks && data.issues && data.logs && data.roles && data.projects && data.holidays !== undefined && data.weeklyHolidays !== undefined) {
-              if (confirm('Replace all current data with the backup? This cannot be undone.')) {
-                users = data.users;
-                tasks = data.tasks;
-                issues = data.issues;
-                logs = data.logs;
-                roles = data.roles;
-                projects = data.projects;
-                holidays = data.holidays;
-                weeklyHolidays = data.weeklyHolidays;
-                saveData();
-                addLog('RESTORE', 'Restored data from JSON backup');
-                alert('Restore complete. Refreshing view.');
-                if (currentUser) {
-                  renderSidebar();
-                  renderContent(currentView);
-                }
-              }
-            } else {
-              alert('Invalid backup file: missing users, tasks, issues, logs, roles, projects, holidays, or weeklyHolidays.');
-            }
-          } catch (err) {
-            alert('Error parsing backup file: ' + err.message);
-          }
-        };
-        reader.readAsText(file);
       }
 
       function tasksToCSV() {
@@ -1807,6 +1605,126 @@
         }
         result.push(line.substring(start).replace(/^"|"$/g, '').replace(/""/g, '"'));
         return result;
+      }
+
+      function startFileWatcher() {
+        if (!hasFileSystemAccess) return;
+        if (watcherInterval) clearInterval(watcherInterval);
+        watcherInterval = setInterval(async () => {
+          if (!fileHandle) return;
+          try {
+            const file = await fileHandle.getFile();
+            if (file.lastModified > lastModified) {
+              if (confirm('The shared CSV file has changed externally. Reload data? (Any unsaved changes will be lost)')) {
+                await loadFromFile();
+                if (currentUser) {
+                  renderSidebar();
+                  renderContent(currentView);
+                }
+              } else {
+                lastModified = file.lastModified;
+              }
+            }
+          } catch (e) {}
+        }, 5000);
+      }
+
+      // ---------- LOCAL STORAGE ----------
+      function loadDataLocal() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          try {
+            const data = JSON.parse(stored);
+            users = data.users || defaultUsers.map(u => ({...u}));
+            tasks = data.tasks || defaultTasks.map(t => ({...t}));
+            issues = data.issues || defaultIssues.map(i => ({...i}));
+            logs = data.logs || [];
+            roles = data.roles || defaultRoles.map(r => ({...r}));
+            projects = data.projects || defaultProjects.map(p => ({...p}));
+            holidays = data.holidays || defaultHolidays;
+            weeklyHolidays = data.weeklyHolidays || defaultWeeklyHolidays;
+          } catch (e) {
+            resetToDefaults();
+          }
+        } else {
+          resetToDefaults();
+        }
+        tasks.forEach(t => { if (!t.createdAt) t.createdAt = Date.now(); });
+        issues.forEach(i => { if (!i.createdAt) i.createdAt = Date.now(); });
+      }
+
+      function resetToDefaults() {
+        users = defaultUsers.map(u => ({...u}));
+        tasks = defaultTasks.map(t => ({...t}));
+        issues = defaultIssues.map(i => ({...i}));
+        logs = [];
+        roles = defaultRoles.map(r => ({...r}));
+        projects = defaultProjects.map(p => ({...p}));
+        holidays = defaultHolidays;
+        weeklyHolidays = defaultWeeklyHolidays;
+        saveDataLocal();
+      }
+
+      function saveDataLocal() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ users, tasks, issues, logs, roles, projects, holidays, weeklyHolidays }));
+      }
+
+      function saveData() {
+        saveDataLocal();
+        if (fileHandle && hasFileSystemAccess) {
+          saveToFile().catch(err => console.warn('CSV save failed (will retry later):', err));
+        }
+      }
+
+      function addLog(action, details) {
+        if (!currentUser) return;
+        logs.push({ id: generateId('log'), userId: currentUser.id, username: currentUser.username, action, details, timestamp: Date.now() });
+        saveData();
+      }
+
+      function backupData() {
+        const data = { users, tasks, issues, logs, roles, projects, holidays, weeklyHolidays };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `flowtask_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        addLog('BACKUP', 'Downloaded JSON backup');
+      }
+
+      function restoreData(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            if (data.users && data.tasks && data.issues && data.logs && data.roles && data.projects && data.holidays !== undefined && data.weeklyHolidays !== undefined) {
+              if (confirm('Replace all current data with the backup? This cannot be undone.')) {
+                users = data.users;
+                tasks = data.tasks;
+                issues = data.issues;
+                logs = data.logs;
+                roles = data.roles;
+                projects = data.projects;
+                holidays = data.holidays;
+                weeklyHolidays = data.weeklyHolidays;
+                saveData();
+                addLog('RESTORE', 'Restored data from JSON backup');
+                alert('Restore complete. Refreshing view.');
+                if (currentUser) {
+                  renderSidebar();
+                  renderContent(currentView);
+                }
+              }
+            } else {
+              alert('Invalid backup file: missing users, tasks, issues, logs, roles, projects, holidays, or weeklyHolidays.');
+            }
+          } catch (err) {
+            alert('Error parsing backup file: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
       }
 
       // ========== ENHANCED IMPORT ==========
@@ -2237,7 +2155,6 @@
       const importBtn = document.getElementById('importBtn');
       const syncFolderBtn = document.getElementById('syncFolderBtn');
       const syncNowBtn = document.getElementById('syncNowBtn');
-      const cloudUrlBtn = document.getElementById('cloudUrlBtn');
       const backupBtn = document.getElementById('backupBtn');
       const restoreBtn = document.getElementById('restoreBtn');
       const restoreFileInput = document.getElementById('restoreFileInput');
@@ -2254,12 +2171,6 @@
       const mobileDetailModal = document.getElementById('mobileDetailModal');
       const mobileDetailContent = document.getElementById('mobileDetailContent');
       const closeMobileDetail = document.getElementById('closeMobileDetail');
-      const cloudUrlModal = document.getElementById('cloudUrlModal');
-      const closeCloudUrlModal = document.getElementById('closeCloudUrlModal');
-      const cloudUrlInput = document.getElementById('cloudUrl');
-      const saveCloudUrlBtn = document.getElementById('saveCloudUrlBtn');
-      const loadFromCloudUrlBtn = document.getElementById('loadFromCloudUrlBtn');
-      const saveToCloudUrlBtn = document.getElementById('saveToCloudUrlBtn');
 
       // Modals
       const userInfoModal = document.getElementById('userInfoModal');
@@ -2367,7 +2278,6 @@
       closeProjectModal.addEventListener('click', () => projectModal.classList.remove('active'));
       closeNewVersionModal.addEventListener('click', () => newVersionModal.classList.remove('active'));
       closeHolidayModal.addEventListener('click', () => holidayModal.classList.remove('active'));
-      closeCloudUrlModal.addEventListener('click', () => cloudUrlModal.classList.remove('active'));
 
       if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
       themeToggle.addEventListener('click', () => {
@@ -2436,11 +2346,23 @@
         menuItems.unshift({ id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard' });
 
         importBtn.style.display = currentUser.roleId === 'r1' ? 'inline-flex' : 'none';
-        syncFolderBtn.style.display = currentUser.roleId === 'r1' ? 'inline-flex' : 'none';
-        syncNowBtn.style.display = (currentUser.roleId === 'r1' && fileHandle) ? 'inline-flex' : 'none';
-        cloudUrlBtn.style.display = currentUser.roleId === 'r1' ? 'inline-flex' : 'none';
-        backupBtn.style.display = currentUser.roleId === 'r1' ? 'inline-flex' : 'none';
-        restoreBtn.style.display = currentUser.roleId === 'r1' ? 'inline-flex' : 'none';
+
+        if (currentUser.roleId === 'r1') {
+          if (hasFileSystemAccess) {
+            syncFolderBtn.style.display = 'inline-flex';
+            syncNowBtn.style.display = fileHandle ? 'inline-flex' : 'none';
+          } else {
+            syncFolderBtn.style.display = 'none';
+            syncNowBtn.style.display = 'none';
+          }
+          backupBtn.style.display = 'inline-flex';
+          restoreBtn.style.display = 'inline-flex';
+        } else {
+          syncFolderBtn.style.display = 'none';
+          syncNowBtn.style.display = 'none';
+          backupBtn.style.display = 'none';
+          restoreBtn.style.display = 'none';
+        }
 
         const unsolvedCount = getUnsolvedIssuesCount();
         const activeHoldCount = getActiveHoldCount();
@@ -2496,7 +2418,7 @@
         });
       }
 
-      // ----- DASHBOARD (unchanged) -----
+      // ----- DASHBOARD -----
       function renderDashboard() {
         const visibleTasks = getVisibleTasks();
         const total = visibleTasks.length;
@@ -2578,7 +2500,7 @@
         }, 100);
       }
 
-      // ----- AUDIT LOGS (unchanged) -----
+      // ----- AUDIT LOGS -----
       function renderAuditLogs() {
         let html = '<h2>Audit Logs</h2><div style="overflow-x:auto;"><table class="logs-table"><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr>';
         logs.slice().reverse().forEach(log => {
@@ -2588,7 +2510,7 @@
         showFullWidthContent(html);
       }
 
-      // ----- USER MANAGEMENT (unchanged) -----
+      // ----- USER MANAGEMENT (points column removed) -----
       function renderUserManagement() {
         let html = '<h2>Manage Users</h2>';
         html += '<button class="btn" id="addUserBtn"><i class="fas fa-plus"></i> Add User</button>';
@@ -2670,7 +2592,7 @@
         renderUserManagement();
       }
 
-      // ----- ROLE MANAGEMENT (unchanged) -----
+      // ----- ROLE MANAGEMENT -----
       function renderRoleManagement() {
         let html = '<h2>Manage Roles</h2>';
         html += '<button class="btn" id="addRoleBtn"><i class="fas fa-plus"></i> Add Role</button>';
@@ -2735,7 +2657,7 @@
         renderRoleManagement();
       }
 
-      // ----- PROJECTS (unchanged) -----
+      // ----- PROJECTS -----
       function renderProjects() {
         let html = '<h2>Projects</h2>';
         if (hasPermission('create_project')) {
@@ -2825,7 +2747,7 @@
         renderProjects();
       }
 
-      // ----- ISSUES (unchanged) -----
+      // ----- ISSUES -----
       function renderIssuesList() {
         const filtered = issues.sort((a,b) => a.solved - b.solved);
         let html = '<h2>Issues</h2><button class="btn" id="createIssueBtnHeader"><i class="fas fa-plus"></i> New Issue</button><div id="issuesList">';
@@ -2935,7 +2857,7 @@
         }
       }
 
-      // ----- HOLD TASKS (unchanged) -----
+      // ----- HOLD TASKS -----
       function renderHoldTasks() {
         const visibleUserIds = getVisibleUserIds();
         // Show all tasks that have ever been on hold (holdReason exists or holdReleased true) AND are visible
@@ -3038,7 +2960,7 @@
         renderHoldTasks();
       }
 
-      // ----- ENHANCED TEAM PERFORMANCE (unchanged) -----
+      // ----- ENHANCED TEAM PERFORMANCE with issues and holds -----
       function renderTeamPerformance() {
         let minDate = null;
         let maxDate = new Date();
@@ -3455,7 +3377,7 @@
         }, 100);
       }
 
-      // ----- GANTT (unchanged) -----
+      // ----- GANTT -----
       function renderGantt() {
         const visibleTasks = getVisibleTasks();
         const sorted = visibleTasks.filter(t => t.startDate && t.deadline).sort((a,b) => new Date(a.startDate) - new Date(b.startDate));
@@ -3478,7 +3400,7 @@
         showFullWidthContent(html);
       }
 
-      // ----- TASK LIST (unchanged) -----
+      // ----- TASK LIST -----
       function renderTaskList() {
         let filtered = getVisibleTasks();
 
@@ -3552,7 +3474,7 @@
         }
       }
 
-      // ----- RENDER TASK DETAIL (unchanged) -----
+      // ----- RENDER TASK DETAIL (with version history) -----
       function renderTaskDetail(taskId) {
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
@@ -3843,7 +3765,7 @@
         });
       }
 
-      // ----- NEW VERSION MODAL (unchanged) -----
+      // ----- NEW VERSION MODAL -----
       function openNewVersionModal(task) {
         const rootId = task.rootTaskId || task.id;
         versionRootId.value = rootId;
@@ -3907,7 +3829,7 @@
         selectTask(newTask.id);
       });
 
-      // ----- NEXT STAGE FUNCTION (unchanged) -----
+      // ----- NEXT STAGE FUNCTION -----
       function nextStage(task) {
         const isManager = currentUser.roleId === 'r2' || currentUser.roleId === 'r1';
         if (isManager) {
@@ -3928,7 +3850,7 @@
         renderTaskList();
       }
 
-      // ----- MOBILE VERSIONS (unchanged) -----
+      // ----- MOBILE VERSIONS (simplified) -----
       function renderMobileTaskDetail(taskId) {
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
@@ -4361,7 +4283,7 @@
         } else if (currentView === 'holdtasks') renderHoldTasks();
       });
 
-      // ----- HOLIDAY MANAGEMENT (unchanged) -----
+      // ----- HOLIDAY MANAGEMENT (with weekly) -----
       function renderHolidays() {
         let html = '<h2>Manage Holidays</h2>';
 
@@ -4467,7 +4389,7 @@
         }
       }
 
-      // ----- EXPORT (unchanged) -----
+      // ----- EXPORT (enhanced with timestamps) -----
       function exportAllTasks() {
         const visibleTasks = getVisibleTasks(); // respect user's visibility
         const headers = [
@@ -4535,81 +4457,7 @@
         importFileInput.value = '';
       });
 
-      // ----- CLOUD URL SETTINGS -----
-      cloudUrlBtn.addEventListener('click', () => {
-        cloudUrlInput.value = cloudUrl;
-        cloudUrlModal.classList.add('active');
-      });
-
-      saveCloudUrlBtn.addEventListener('click', () => {
-        cloudUrl = cloudUrlInput.value.trim();
-        localStorage.setItem('cloud_url', cloudUrl);
-        cloudUrlModal.classList.remove('active');
-        alert('Cloud URL saved.');
-        if (cloudUrl) {
-          // Test connection
-          loadFromCloudUrl().then(success => {
-            if (success) alert('Data loaded from URL.');
-          });
-        }
-      });
-
-      loadFromCloudUrlBtn.addEventListener('click', async () => {
-        if (!cloudUrl) { alert('Please set a cloud URL first.'); return; }
-        if (await loadFromCloudUrl()) {
-          alert('Data loaded from cloud URL.');
-          if (currentUser) {
-            renderSidebar();
-            renderContent(currentView);
-          }
-        } else {
-          alert('Failed to load from URL. Check that the URL supports GET and CORS.');
-        }
-      });
-
-      saveToCloudUrlBtn.addEventListener('click', async () => {
-        if (!cloudUrl) { alert('Please set a cloud URL first.'); return; }
-        if (await saveToCloudUrl()) {
-          alert('Data saved to cloud URL.');
-        }
-      });
-
-      // ----- LOCAL FOLDER SYNC -----
-      syncFolderBtn.addEventListener('click', async () => {
-        if (currentUser.roleId !== 'r1') { alert('Only admin can set sync folder.'); return; }
-        if (await pickDirectory()) {
-          alert('Sync folder set. Data will be synced to tasks.enc in the selected folder.');
-          renderSidebar();
-          renderContent(currentView);
-        }
-      });
-
-      syncNowBtn.addEventListener('click', async () => {
-        if (!fileHandle) { alert('No sync folder set.'); return; }
-        if (await loadFromFile()) {
-          alert('Data reloaded from sync file.');
-          if (currentUser) {
-            renderSidebar();
-            renderContent(currentView);
-          }
-        } else {
-          alert('Sync failed (or file empty).');
-        }
-      });
-
-      // ----- AUTO SYNC (both methods) -----
-      setInterval(async () => {
-        if (currentUser) {
-          if (fileHandle && hasFileSystemAccess) {
-            await saveToFile().catch(err => console.warn('Auto local sync failed:', err));
-          }
-          if (cloudUrl) {
-            await saveToCloudUrl().catch(err => console.warn('Auto cloud sync failed:', err));
-          }
-        }
-      }, 10000);
-
-      // ----- ORG CHART (unchanged) -----
+      // ----- ORG CHART -----
       function renderOrgChart() {
         const itUsers = users.filter(u => getRoleName(u.roleId).toLowerCase() === 'admin');
         const techUsers = users.filter(u => getRoleName(u.roleId).toLowerCase() !== 'admin');
@@ -4667,7 +4515,7 @@
         };
       }
 
-      // ----- PROFILE MODAL (unchanged) -----
+      // ----- PROFILE MODAL -----
       function openProfileModal() {
         profileCurrentPassword.value = '';
         profileNewUsername.value = currentUser.username;
@@ -4697,7 +4545,7 @@
         currentUserDisplay.innerText = currentUser.username;
       });
 
-      // ----- SYSTEM UPDATE (unchanged) -----
+      // ----- SYSTEM UPDATE -----
       function renderSystemUpdate() {
         let html = '<h2>System Update</h2>';
         html += `<p>Current Version: ${APP_VERSION}</p>`;
@@ -4746,6 +4594,35 @@
         updateUIVisibility();
       });
 
+      syncFolderBtn.addEventListener('click', async () => {
+        if (currentUser.roleId !== 'r1') { alert('Only admin can set sync folder.'); return; }
+        if (await pickDirectory()) {
+          alert('Sync folder set. Data will be synced to tasks.enc in the selected folder.\n\nYou can choose any folder - local drives, Dropbox folders, Google Drive folders, network drives, etc. as long as your browser has access to it.');
+          renderSidebar();
+          renderContent(currentView);
+        }
+      });
+
+      syncNowBtn.addEventListener('click', async () => {
+        if (!fileHandle) { alert('No sync folder set.'); return; }
+        if (await loadFromFile()) {
+          alert('Data reloaded from sync file.');
+          if (currentUser) {
+            renderSidebar();
+            renderContent(currentView);
+          }
+        } else {
+          alert('Sync failed (or file empty).');
+        }
+      });
+
+      backupBtn.addEventListener('click', backupData);
+      restoreBtn.addEventListener('click', () => restoreFileInput.click());
+      restoreFileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) restoreData(e.target.files[0]);
+        restoreFileInput.value = '';
+      });
+
       exportBtn.addEventListener('click', () => {
         if (hasPermission('export_all')) exportAllTasks();
         else if (hasPermission('export_own')) exportMyTasks();
@@ -4774,15 +4651,6 @@
         loadSession();
         updateUIVisibility();
         initFilters();
-
-        // If cloud URL exists, try to load from it on startup
-        if (cloudUrl) {
-          await loadFromCloudUrl();
-          if (currentUser) {
-            renderSidebar();
-            renderContent(currentView);
-          }
-        }
       })();
 
       function updateUIVisibility() {
