@@ -4512,6 +4512,52 @@
     `<option value="${p.id}">${escapeHTML(p.name)}</option>`
   ).join('');
 
+  // Common function to handle task creation and cleanup
+  const saveTask = () => {
+    const title = document.getElementById('newTitle').value.trim();
+    if (!title) { alert('Title required'); return false; }
+    const task = {
+      id: generateId('t'),
+      title,
+      description: document.getElementById('newDesc').value.trim(),
+      status: document.getElementById('newStatus').value,
+      progress: parseInt(document.getElementById('newProgress').value, 10),
+      assignedTo: document.getElementById('newAssigned').value || null,
+      priority: document.getElementById('newPriority').value,
+      projectId: document.getElementById('newProject').value || null,
+      startDate: document.getElementById('newStart').value,
+      deadline: document.getElementById('newDeadline').value,
+      holdReason: null, holdType: null, holdForUserId: null, holdComment: null,
+      holdReleased: false,
+      lastHoldAction: null,
+      lastHoldActionBy: null,
+      lastHoldActionAt: null,
+      releasedAt: null,
+      comments: [],
+      createdAt: Date.now(),
+      pointsAwarded: false,
+      completedAt: null,
+      rootTaskId: null
+    };
+    tasks.push(task);
+    addLog('TASK_CREATE', `Created task: ${title}`);
+    notifyTaskCreated(task);
+    saveData();
+
+    // Reset all filters to default
+    resetTaskFilters();
+    // Refresh the task list
+    renderTaskList();
+
+    // Update sidebar active state to Tasks
+    currentView = 'tasks';
+    sidebar.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+    const tasksMenuItem = Array.from(sidebar.querySelectorAll('.menu-item')).find(el => el.dataset.view === 'tasks');
+    if (tasksMenuItem) tasksMenuItem.classList.add('active');
+
+    return true;
+  };
+
   if (window.innerWidth <= 768) {
     // Mobile version
     const html = `
@@ -4530,46 +4576,10 @@
     mobileDetailModal.classList.add('active');
     document.getElementById('newProgress').addEventListener('input', (e) => document.getElementById('newProgressVal').innerText = e.target.value + '%');
     document.getElementById('saveNewBtn').addEventListener('click', () => {
-      const title = document.getElementById('newTitle').value.trim();
-      if (!title) { alert('Title required'); return; }
-      const task = {
-        id: generateId('t'),
-        title,
-        description: document.getElementById('newDesc').value.trim(),
-        status: document.getElementById('newStatus').value,
-        progress: parseInt(document.getElementById('newProgress').value, 10),
-        assignedTo: document.getElementById('newAssigned').value || null,
-        priority: document.getElementById('newPriority').value,
-        projectId: document.getElementById('newProject').value || null,
-        startDate: document.getElementById('newStart').value,
-        deadline: document.getElementById('newDeadline').value,
-        holdReason: null, holdType: null, holdForUserId: null, holdComment: null,
-        holdReleased: false,
-        lastHoldAction: null,
-        lastHoldActionBy: null,
-        lastHoldActionAt: null,
-        releasedAt: null,
-        comments: [],
-        createdAt: Date.now(),
-        pointsAwarded: false,
-        completedAt: null,
-        rootTaskId: null
-      };
-      tasks.push(task);
-      addLog('TASK_CREATE', `Created task: ${title}`);
-      notifyTaskCreated(task);
-      saveData();
-
-      // Reset filters and refresh task list
-      resetTaskFilters();
-      renderTaskList();
-      mobileDetailModal.classList.remove('active');
-
-      // Update sidebar active state to Tasks
-      currentView = 'tasks';
-      sidebar.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-      const tasksMenuItem = Array.from(sidebar.querySelectorAll('.menu-item')).find(el => el.dataset.view === 'tasks');
-      if (tasksMenuItem) tasksMenuItem.classList.add('active');
+      const success = saveTask();
+      if (success) {
+        mobileDetailModal.classList.remove('active');
+      }
     });
   } else {
     // Desktop version
@@ -4590,49 +4600,14 @@
     taskDetailView.innerHTML = html;
     document.getElementById('newProgress').addEventListener('input', (e) => document.getElementById('newProgressVal').innerText = e.target.value + '%');
     document.getElementById('saveNewBtn').addEventListener('click', () => {
-      const title = document.getElementById('newTitle').value.trim();
-      if (!title) { alert('Title required'); return; }
-      const task = {
-        id: generateId('t'),
-        title,
-        description: document.getElementById('newDesc').value.trim(),
-        status: document.getElementById('newStatus').value,
-        progress: parseInt(document.getElementById('newProgress').value, 10),
-        assignedTo: document.getElementById('newAssigned').value || null,
-        priority: document.getElementById('newPriority').value,
-        projectId: document.getElementById('newProject').value || null,
-        startDate: document.getElementById('newStart').value,
-        deadline: document.getElementById('newDeadline').value,
-        holdReason: null, holdType: null, holdForUserId: null, holdComment: null,
-        holdReleased: false,
-        lastHoldAction: null,
-        lastHoldActionBy: null,
-        lastHoldActionAt: null,
-        releasedAt: null,
-        comments: [],
-        createdAt: Date.now(),
-        pointsAwarded: false,
-        completedAt: null,
-        rootTaskId: null
-      };
-      tasks.push(task);
-      addLog('TASK_CREATE', `Created task: ${title}`);
-      notifyTaskCreated(task);
-      saveData();
-
-      // Reset filters and refresh task list, then select the new task
-      resetTaskFilters();
-      renderTaskList();
-      selectTask(task.id);
-
-      // Update sidebar active state to Tasks
-      currentView = 'tasks';
-      sidebar.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-      const tasksMenuItem = Array.from(sidebar.querySelectorAll('.menu-item')).find(el => el.dataset.view === 'tasks');
-      if (tasksMenuItem) tasksMenuItem.classList.add('active');
+      const success = saveTask();
+      if (success && tasks.length > 0) {
+        selectTask(tasks[tasks.length-1].id); // select the newly created task
+      }
     });
   }
-           }   
+      }
+
       // ----- HOLIDAY MANAGEMENT (unchanged) -----
       function renderHolidays() {
         let html = '<h2>Manage Holidays</h2>';
