@@ -4500,7 +4500,8 @@
         renderNewTaskForm();
       }
 
-          function renderNewTaskForm() {
+          
+           function renderNewTaskForm() {
   showTaskView();
   const assignableUsers = getAssignableUsers();
   const assignedOptions = assignableUsers.map(u => 
@@ -4512,6 +4513,7 @@
   ).join('');
 
   if (window.innerWidth <= 768) {
+    // Mobile version
     const html = `
       <h2>New Task</h2>
       <div class="form-group"><label>Title</label><input type="text" id="newTitle"></div>
@@ -4557,8 +4559,12 @@
       addLog('TASK_CREATE', `Created task: ${title}`);
       notifyTaskCreated(task);
       saveData();
+
+      // Reset filters and refresh task list
+      resetTaskFilters();
       renderTaskList();
       mobileDetailModal.classList.remove('active');
+
       // Update sidebar active state to Tasks
       currentView = 'tasks';
       sidebar.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
@@ -4566,6 +4572,7 @@
       if (tasksMenuItem) tasksMenuItem.classList.add('active');
     });
   } else {
+    // Desktop version
     taskDetailView.style.display = 'block';
     emptyState.style.display = 'none';
     const html = `
@@ -4612,8 +4619,12 @@
       addLog('TASK_CREATE', `Created task: ${title}`);
       notifyTaskCreated(task);
       saveData();
+
+      // Reset filters and refresh task list, then select the new task
+      resetTaskFilters();
       renderTaskList();
       selectTask(task.id);
+
       // Update sidebar active state to Tasks
       currentView = 'tasks';
       sidebar.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
@@ -4621,7 +4632,7 @@
       if (tasksMenuItem) tasksMenuItem.classList.add('active');
     });
   }
-          }
+           }   
       // ----- HOLIDAY MANAGEMENT (unchanged) -----
       function renderHolidays() {
         let html = '<h2>Manage Holidays</h2>';
