@@ -4500,161 +4500,128 @@
         renderNewTaskForm();
       }
 
-      function renderNewTaskForm() {
-        showTaskView();
-        const assignableUsers = getAssignableUsers();
-        const assignedOptions = assignableUsers.map(u => 
-          `<option value="${u.id}">${escapeHTML(u.username)}</option>`
-        ).join('');
-        const visibleProjects = getVisibleProjects();
-        const projectOptions = visibleProjects.map(p => 
-          `<option value="${p.id}">${escapeHTML(p.name)}</option>`
-        ).join('');
+          function renderNewTaskForm() {
+  showTaskView();
+  const assignableUsers = getAssignableUsers();
+  const assignedOptions = assignableUsers.map(u => 
+    `<option value="${u.id}">${escapeHTML(u.username)}</option>`
+  ).join('');
+  const visibleProjects = getVisibleProjects();
+  const projectOptions = visibleProjects.map(p => 
+    `<option value="${p.id}">${escapeHTML(p.name)}</option>`
+  ).join('');
 
-        if (window.innerWidth <= 768) {
-          const html = `
-            <h2>New Task</h2>
-            <div class="form-group"><label>Title</label><input type="text" id="newTitle"></div>
-            <div class="form-group"><label>Description</label><textarea id="newDesc"></textarea></div>
-            <div class="form-group"><label>Status</label><select id="newStatus"><option value="todo">To Do</option><option value="in-progress">In Progress</option></select></div>
-            <div class="form-group"><label>Progress</label><input type="range" id="newProgress" min="0" max="100" value="0"><span id="newProgressVal">0%</span></div>
-            <div class="form-group"><label>Assigned To</label><select id="newAssigned"><option value="">Unassigned</option>${assignedOptions}</select></div>
-            <div class="form-group"><label>Priority</label><select id="newPriority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
-            <div class="form-group"><label>Project</label><select id="newProject"><option value="">None</option>${projectOptions}</select></div>
-            <div class="date-row"><div class="form-group"><label>Start Date</label><input type="date" id="newStart"></div><div class="form-group"><label>Deadline</label><input type="date" id="newDeadline"></div></div>
-            <button class="btn" id="saveNewBtn">Create Task</button>
-          `;
-          mobileDetailContent.innerHTML = html;
-          mobileDetailModal.classList.add('active');
-          document.getElementById('newProgress').addEventListener('input', (e) => document.getElementById('newProgressVal').innerText = e.target.value + '%');
-          document.getElementById('saveNewBtn').addEventListener('click', () => {
-            const title = document.getElementById('newTitle').value.trim();
-            if (!title) { alert('Title required'); return; }
-            const task = {
-              id: generateId('t'),
-              title,
-              description: document.getElementById('newDesc').value.trim(),
-              status: document.getElementById('newStatus').value,
-              progress: parseInt(document.getElementById('newProgress').value, 10),
-              assignedTo: document.getElementById('newAssigned').value || null,
-              priority: document.getElementById('newPriority').value,
-              projectId: document.getElementById('newProject').value || null,
-              startDate: document.getElementById('newStart').value,
-              deadline: document.getElementById('newDeadline').value,
-              holdReason: null, holdType: null, holdForUserId: null, holdComment: null,
-              holdReleased: false,
-              lastHoldAction: null,
-              lastHoldActionBy: null,
-              lastHoldActionAt: null,
-              releasedAt: null,
-              comments: [],
-              createdAt: Date.now(),
-              pointsAwarded: false,
-              completedAt: null,
-              rootTaskId: null
-            };
-            tasks.push(task);
-            addLog('TASK_CREATE', `Created task: ${title}`);
-            notifyTaskCreated(task);
-            saveData();
-            renderTaskList();
-            mobileDetailModal.classList.remove('active');
-          });
-        } else {
-          taskDetailView.style.display = 'block';
-          emptyState.style.display = 'none';
-          const html = `
-            <h2>New Task</h2>
-            <div class="form-group"><label>Title</label><input type="text" id="newTitle"></div>
-            <div class="form-group"><label>Description</label><textarea id="newDesc"></textarea></div>
-            <div class="form-group"><label>Status</label><select id="newStatus"><option value="todo">To Do</option><option value="in-progress">In Progress</option></select></div>
-            <div class="form-group"><label>Progress</label><input type="range" id="newProgress" min="0" max="100" value="0"><span id="newProgressVal">0%</span></div>
-            <div class="form-group"><label>Assigned To</label><select id="newAssigned"><option value="">Unassigned</option>${assignedOptions}</select></div>
-            <div class="form-group"><label>Priority</label><select id="newPriority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
-            <div class="form-group"><label>Project</label><select id="newProject"><option value="">None</option>${projectOptions}</select></div>
-            <div class="date-row"><div class="form-group"><label>Start Date</label><input type="date" id="newStart"></div><div class="form-group"><label>Deadline</label><input type="date" id="newDeadline"></div></div>
-            <button class="btn" id="saveNewBtn">Create Task</button>
-          `;
-          taskDetailView.innerHTML = html;
-          document.getElementById('newProgress').addEventListener('input', (e) => document.getElementById('newProgressVal').innerText = e.target.value + '%');
-          document.getElementById('saveNewBtn').addEventListener('click', () => {
-            const title = document.getElementById('newTitle').value.trim();
-            if (!title) { alert('Title required'); return; }
-            const task = {
-              id: generateId('t'),
-              title,
-              description: document.getElementById('newDesc').value.trim(),
-              status: document.getElementById('newStatus').value,
-              progress: parseInt(document.getElementById('newProgress').value, 10),
-              assignedTo: document.getElementById('newAssigned').value || null,
-              priority: document.getElementById('newPriority').value,
-              projectId: document.getElementById('newProject').value || null,
-              startDate: document.getElementById('newStart').value,
-              deadline: document.getElementById('newDeadline').value,
-              holdReason: null, holdType: null, holdForUserId: null, holdComment: null,
-              holdReleased: false,
-              lastHoldAction: null,
-              lastHoldActionBy: null,
-              lastHoldActionAt: null,
-              releasedAt: null,
-              comments: [],
-              createdAt: Date.now(),
-              pointsAwarded: false,
-              completedAt: null,
-              rootTaskId: null
-            };
-            tasks.push(task);
-            addLog('TASK_CREATE', `Created task: ${title}`);
-            notifyTaskCreated(task);
-            saveData();
-            renderTaskList();
-            selectTask(task.id);
-          });
-        }
-      }
-
-      function openHoldModal(taskId) {
-        const task = tasks.find(t => t.id === taskId);
-        if (!task) return;
-        currentHoldTaskId = taskId;
-        holdTaskId.innerText = taskId;
-        holdType.value = 'user';
-        holdUserSelectGroup.style.display = 'block';
-        const assignableUsers = getAssignableUsers();
-        holdForUserSelect.innerHTML = assignableUsers.map(u => `<option value="${u.id}">${escapeHTML(u.username)}</option>`).join('');
-        holdReason.value = '';
-        holdModal.classList.add('active');
-      }
-
-      submitHoldBtn.addEventListener('click', () => {
-        const task = tasks.find(t => t.id === currentHoldTaskId);
-        if (!task) return;
-        const type = holdType.value;
-        const reason = holdReason.value.trim();
-        const forUser = type === 'user' ? holdForUserSelect.value : null;
-        if (!reason) { alert('Reason required'); return; }
-        task.status = 'hold';
-        task.holdReason = reason;
-        task.holdType = type;
-        task.holdForUserId = forUser;
-        task.holdReleased = false;
-        task.lastHoldAction = null;
-        task.lastHoldActionBy = null;
-        task.lastHoldActionAt = null;
-        task.releasedAt = null;
-        addLog('TASK_HOLD', `Held task: ${task.title}`);
-        saveData();
-        holdModal.classList.remove('active');
-        if (currentView === 'tasks') {
-          renderTaskList();
-          if (window.innerWidth <= 768) {
-            mobileDetailModal.classList.remove('active');
-          } else {
-            selectTask(task.id);
+  if (window.innerWidth <= 768) {
+    const html = `
+      <h2>New Task</h2>
+      <div class="form-group"><label>Title</label><input type="text" id="newTitle"></div>
+      <div class="form-group"><label>Description</label><textarea id="newDesc"></textarea></div>
+      <div class="form-group"><label>Status</label><select id="newStatus"><option value="todo">To Do</option><option value="in-progress">In Progress</option></select></div>
+      <div class="form-group"><label>Progress</label><input type="range" id="newProgress" min="0" max="100" value="0"><span id="newProgressVal">0%</span></div>
+      <div class="form-group"><label>Assigned To</label><select id="newAssigned"><option value="">Unassigned</option>${assignedOptions}</select></div>
+      <div class="form-group"><label>Priority</label><select id="newPriority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+      <div class="form-group"><label>Project</label><select id="newProject"><option value="">None</option>${projectOptions}</select></div>
+      <div class="date-row"><div class="form-group"><label>Start Date</label><input type="date" id="newStart"></div><div class="form-group"><label>Deadline</label><input type="date" id="newDeadline"></div></div>
+      <button class="btn" id="saveNewBtn">Create Task</button>
+    `;
+    mobileDetailContent.innerHTML = html;
+    mobileDetailModal.classList.add('active');
+    document.getElementById('newProgress').addEventListener('input', (e) => document.getElementById('newProgressVal').innerText = e.target.value + '%');
+    document.getElementById('saveNewBtn').addEventListener('click', () => {
+      const title = document.getElementById('newTitle').value.trim();
+      if (!title) { alert('Title required'); return; }
+      const task = {
+        id: generateId('t'),
+        title,
+        description: document.getElementById('newDesc').value.trim(),
+        status: document.getElementById('newStatus').value,
+        progress: parseInt(document.getElementById('newProgress').value, 10),
+        assignedTo: document.getElementById('newAssigned').value || null,
+        priority: document.getElementById('newPriority').value,
+        projectId: document.getElementById('newProject').value || null,
+        startDate: document.getElementById('newStart').value,
+        deadline: document.getElementById('newDeadline').value,
+        holdReason: null, holdType: null, holdForUserId: null, holdComment: null,
+        holdReleased: false,
+        lastHoldAction: null,
+        lastHoldActionBy: null,
+        lastHoldActionAt: null,
+        releasedAt: null,
+        comments: [],
+        createdAt: Date.now(),
+        pointsAwarded: false,
+        completedAt: null,
+        rootTaskId: null
+      };
+      tasks.push(task);
+      addLog('TASK_CREATE', `Created task: ${title}`);
+      notifyTaskCreated(task);
+      saveData();
+      renderTaskList();
+      mobileDetailModal.classList.remove('active');
+      // Update sidebar active state to Tasks
+      currentView = 'tasks';
+      sidebar.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+      const tasksMenuItem = Array.from(sidebar.querySelectorAll('.menu-item')).find(el => el.dataset.view === 'tasks');
+      if (tasksMenuItem) tasksMenuItem.classList.add('active');
+    });
+  } else {
+    taskDetailView.style.display = 'block';
+    emptyState.style.display = 'none';
+    const html = `
+      <h2>New Task</h2>
+      <div class="form-group"><label>Title</label><input type="text" id="newTitle"></div>
+      <div class="form-group"><label>Description</label><textarea id="newDesc"></textarea></div>
+      <div class="form-group"><label>Status</label><select id="newStatus"><option value="todo">To Do</option><option value="in-progress">In Progress</option></select></div>
+      <div class="form-group"><label>Progress</label><input type="range" id="newProgress" min="0" max="100" value="0"><span id="newProgressVal">0%</span></div>
+      <div class="form-group"><label>Assigned To</label><select id="newAssigned"><option value="">Unassigned</option>${assignedOptions}</select></div>
+      <div class="form-group"><label>Priority</label><select id="newPriority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+      <div class="form-group"><label>Project</label><select id="newProject"><option value="">None</option>${projectOptions}</select></div>
+      <div class="date-row"><div class="form-group"><label>Start Date</label><input type="date" id="newStart"></div><div class="form-group"><label>Deadline</label><input type="date" id="newDeadline"></div></div>
+      <button class="btn" id="saveNewBtn">Create Task</button>
+    `;
+    taskDetailView.innerHTML = html;
+    document.getElementById('newProgress').addEventListener('input', (e) => document.getElementById('newProgressVal').innerText = e.target.value + '%');
+    document.getElementById('saveNewBtn').addEventListener('click', () => {
+      const title = document.getElementById('newTitle').value.trim();
+      if (!title) { alert('Title required'); return; }
+      const task = {
+        id: generateId('t'),
+        title,
+        description: document.getElementById('newDesc').value.trim(),
+        status: document.getElementById('newStatus').value,
+        progress: parseInt(document.getElementById('newProgress').value, 10),
+        assignedTo: document.getElementById('newAssigned').value || null,
+        priority: document.getElementById('newPriority').value,
+        projectId: document.getElementById('newProject').value || null,
+        startDate: document.getElementById('newStart').value,
+        deadline: document.getElementById('newDeadline').value,
+        holdReason: null, holdType: null, holdForUserId: null, holdComment: null,
+        holdReleased: false,
+        lastHoldAction: null,
+        lastHoldActionBy: null,
+        lastHoldActionAt: null,
+        releasedAt: null,
+        comments: [],
+        createdAt: Date.now(),
+        pointsAwarded: false,
+        completedAt: null,
+        rootTaskId: null
+      };
+      tasks.push(task);
+      addLog('TASK_CREATE', `Created task: ${title}`);
+      notifyTaskCreated(task);
+      saveData();
+      renderTaskList();
+      selectTask(task.id);
+      // Update sidebar active state to Tasks
+      currentView = 'tasks';
+      sidebar.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+      const tasksMenuItem = Array.from(sidebar.querySelectorAll('.menu-item')).find(el => el.dataset.view === 'tasks');
+      if (tasksMenuItem) tasksMenuItem.classList.add('active');
+    });
+  }
           }
-        } else if (currentView === 'holdtasks') renderHoldTasks();
-      });
-
       // ----- HOLIDAY MANAGEMENT (unchanged) -----
       function renderHolidays() {
         let html = '<h2>Manage Holidays</h2>';
